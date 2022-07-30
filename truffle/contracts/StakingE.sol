@@ -13,8 +13,9 @@ contract StakingE is Ownable {
 
 	struct Pool {
 		address token;
-		uint256 yield;
-		int priceFeed;
+		// uint256 yield; // Only is you want define rewards APY by token
+		// int priceFeed;
+		bool active;
 	}
 	Pool[] public pools;
 
@@ -30,9 +31,9 @@ contract StakingE is Ownable {
 	struct TotalStake { uint256 amount; }
 	mapping (address => TotalStake) totalStakes;
 
-	constructor (address _stakingToken) {
-		stakingToken = IERC20(_stakingToken);
-	}
+	// Events
+	event NewPool(address tokenAddress); 
+
 	
 	/**
 	 * @notice Stake fund into this contract
@@ -69,20 +70,22 @@ contract StakingE is Ownable {
 	}
 
 
-	function addPool (address _token, uint256 _yield) external onlyOwner {
-		//(
-		// 	/*uint80 roundID*/,
-		// 	int price,
-		// 	/*uint startedAt*/,
-		// 	/*uint timeStamp*/,
-		// 	/*uint80 answeredInRound*/
-        // ) = AggregatorV3Interface(_token).latestRoundData();
-
+	/**
+	 * @notice Make available token address to add pool
+	 * @dev Available only for owner
+	 * @param _token is token address
+	 * @dev Alyra
+	 */
+	function addPool (address _token) external onlyOwner {
+		for (uint256 i = 0; i < pools.length; i++) {
+			require (pools[i].token != _token, "This token already exist.");
+		}
+		
 		Pool memory pool;
 		pool.token = _token;
-		pool.yield = _yield;
-		// pool.priceFeed = price;
-
+		pool.active = true;
 		pools.push(pool);
+
+		emit NewPool(_token);
 	}
 }
