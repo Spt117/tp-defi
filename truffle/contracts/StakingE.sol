@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import '../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract StakingE {
 
@@ -22,9 +22,9 @@ contract StakingE {
 	 * @param _amount to stake
 	 */
 	function stake (uint256 _amount) external {
-		require (_amount > 0, 'The amount must be greater than zero.');
+		require (_amount > 0, "The amount must be greater than zero.");
 		bool result = stakingToken.transferFrom(msg.sender, address(this), _amount);
-		require (result, 'Transfer from error');
+		require (result, "Transfer from error");
 		balances[msg.sender] += _amount;
 		totalStake += _amount;
 	}
@@ -34,9 +34,9 @@ contract StakingE {
 	 * @param _amount to stake
 	 */
 	function withdraw (uint _amount) external {
-		require (_amount > 0, 'The amount must be greater than zero.');
+		require (_amount > 0, "The amount must be greater than zero.");
 		bool result = stakingToken.transfer(msg.sender, _amount);
-		require (result, 'Transfer from error');
+		require (result, "Transfer from error");
 		balances[msg.sender] -= _amount;
 		totalStake -= _amount;
 	}
