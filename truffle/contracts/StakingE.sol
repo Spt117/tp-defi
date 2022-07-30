@@ -6,8 +6,6 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract StakingE is Ownable {
-
-	IERC20 public stakingToken;
 	
 	uint256 private totalStake;
 
@@ -37,7 +35,11 @@ contract StakingE is Ownable {
 	 */
 	function stake (uint256 _amount, address _token) external {
 		require (_amount > 0, "The amount must be greater than zero.");
-		bool result = stakingToken.transferFrom(msg.sender, address(this), _amount);
+		require (pools[_token], "This token isn't available.");
+		
+		bool resultApprove = IERC20(_token).approve(address(this), _amount);
+        require (resultApprove, "Approve from error");
+		bool result = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
 		require (result, "Transfer from error");
 
 		Staker memory staker;
