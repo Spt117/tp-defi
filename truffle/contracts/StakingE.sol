@@ -2,9 +2,10 @@
 pragma solidity 0.8.14;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract StakingE is AggregatorV3Interface {
+contract StakingE is Ownable {
 
 	IERC20 public stakingToken;
 	
@@ -13,7 +14,7 @@ contract StakingE is AggregatorV3Interface {
 	struct Pool {
 		address token;
 		uint256 yield;
-		AggregatorV3Interface priceFeed;
+		int priceFeed;
 	}
 	Pool[] public pools;
 
@@ -46,7 +47,9 @@ contract StakingE is AggregatorV3Interface {
 		staker.addrStaker = msg.sender;
 		staker.token = _token;
 		staker.amount = _amount;
-		staker.date = block.timestamp;	
+		staker.date = block.timestamp;
+
+		stakers.push(staker);
 
 		totalStakes[_token].amount += _amount;
 	}
@@ -63,5 +66,23 @@ contract StakingE is AggregatorV3Interface {
 		delete stakers[_id];
 
 		totalStakes[_token].amount -= _amount;
+	}
+
+
+	function addPool (address _token, uint256 _yield) external onlyOwner {
+		//(
+		// 	/*uint80 roundID*/,
+		// 	int price,
+		// 	/*uint startedAt*/,
+		// 	/*uint timeStamp*/,
+		// 	/*uint80 answeredInRound*/
+        // ) = AggregatorV3Interface(_token).latestRoundData();
+
+		Pool memory pool;
+		pool.token = _token;
+		pool.yield = _yield;
+		// pool.priceFeed = price;
+
+		pools.push(pool);
 	}
 }
