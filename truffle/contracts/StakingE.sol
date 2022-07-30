@@ -53,6 +53,15 @@ contract StakingE is Ownable {
 		totalStakes[_token].amount += _amount;
 	}
 
+
+	function approveForStake (address _token, uint256 _amount) external returns(bool) {
+       bool resultApprove = IERC20(_token).approve(address(this), _amount);
+       require (resultApprove, "Approve from error");
+
+       return resultApprove;
+    }
+
+
 	/**
 	 * @notice Withdraw fund into this contract
 	 * @param _amount to stake
