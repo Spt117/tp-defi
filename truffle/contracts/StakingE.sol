@@ -11,13 +11,8 @@ contract StakingE is Ownable {
 	
 	uint256 private totalStake;
 
-	struct Pool {
-		address token;
-		// uint256 yield; // Only is you want define rewards APY by token
-		// int priceFeed;
-		bool active;
-	}
-	Pool[] public pools;
+	// Token address => active pool
+	mapping (address => bool) pools;
 
 	struct Staker {
 		address addrStaker; // Address of wallet want stake
@@ -38,6 +33,7 @@ contract StakingE is Ownable {
 	/**
 	 * @notice Stake fund into this contract
 	 * @param _amount to stake
+	 * @param _token to stake
 	 */
 	function stake (uint256 _amount, address _token) external {
 		require (_amount > 0, "The amount must be greater than zero.");
@@ -77,14 +73,8 @@ contract StakingE is Ownable {
 	 * @dev Alyra
 	 */
 	function addPool (address _token) external onlyOwner {
-		for (uint256 i = 0; i < pools.length; i++) {
-			require (pools[i].token != _token, "This token already exist.");
-		}
-		
-		Pool memory pool;
-		pool.token = _token;
-		pool.active = true;
-		pools.push(pool);
+		require (!pools[_token], "This token already exist.");
+		pools[_token] = true;
 
 		emit NewPool(_token);
 	}
