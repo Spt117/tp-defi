@@ -6,6 +6,13 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./CrowdV.sol";
 
+/**
+ * @title StakingE : a Staking Plateforme !
+ *
+ * @author Anthony - Etienne - Jean-Baptiste
+ *
+ */
+
 contract StakingE is Ownable, CrowdV {
     uint256 priceTokenRewardInDollar = 1;
     uint256 private totalStake;
@@ -28,17 +35,7 @@ contract StakingE is Ownable, CrowdV {
     Staker[] public stakers;
 
     // Save total amount stake by token address
-    // struct TotalStake {
-    //     uint256 amount;
-    // }
     mapping(address => uint256) totalStakes;
-
-    // // Save total amount stake by token address
-    // struct testStakers {
-    //     uint idStaker;
-    //     address token;
-    //      }
-    // mapping (address => testStakers) ;
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
@@ -141,20 +138,20 @@ contract StakingE is Ownable, CrowdV {
         (
             ,
             /*uint80 roundID*/
-            int256 price,
+            int256 price, /*uint startedAt*/
             ,
             ,
 
-        ) = /*uint startedAt*/
-            /*uint timeStamp*/
+        ) = /*uint timeStamp*/
             /*uint80 answeredInRound*/
             priceFeed.latestRoundData();
 
         return uint256(price);
     }
 
+  
     function calculateReward(uint256 id) public view returns (uint256) {
-        uint256 rewardsperseconds = (pools[stakers[id].token].APR) /
+        uint256 rewardsperseconds = ((pools[stakers[id].token].APR) * 10**8) /
             (365 * 24 * 3600);
 
         uint256 rewardsperstakers = (stakers[id].amount * 100) /
@@ -162,12 +159,14 @@ contract StakingE is Ownable, CrowdV {
 
         uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
 
-        uint256 tokenPrice = getLatestPrice(pools[stakers[id].token].addressPrice);
+        uint256 tokenPrice = getLatestPrice(
+            pools[stakers[id].token].addressPrice
+        );
 
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
-        uint256 rewardstoclaim = (stakers[id].date - block.timestamp) *
-            rewardsInDollar;
+        uint256 rewardstoclaim = (block.timestamp - stakers[id].date) *
+            rewardsInDollar; // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
 
         return rewardstoclaim;
     }
@@ -175,6 +174,6 @@ contract StakingE is Ownable, CrowdV {
     function claimRewards(uint256 id) public {
         uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
 
-        CrowdV.mint(msg.sender, amoutToClaim);
+        CrowdV.mint(amoutToClaim);
     }
 }
