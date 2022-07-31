@@ -7,13 +7,13 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
 import "./CrowdV.sol";
 
 /**
- * @title StakingE : a Staking Plateforme !
+ * @title Staking : a Staking Plateforme !
  *
  * @author Anthony - Etienne - Jean-Baptiste
  *
  */
 
-contract StakingE is Ownable, CrowdV {
+contract StakingJB is Ownable, CrowdV {
     uint256 priceTokenRewardInDollar = 1;
     // uint256 private totalStake;
 
@@ -76,6 +76,7 @@ contract StakingE is Ownable, CrowdV {
      * @dev Emit event after stake
      */
     function stake(uint256 _amount, address _token) external {
+        require(!isStaker(_token), "You already stake this pool"); //msg.sender is already a staker, faire une boucle sur le tableau ?
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
 
@@ -121,7 +122,7 @@ contract StakingE is Ownable, CrowdV {
         require(pools[_token].activePool, "This token isn't available.");
         bool result = IERC20(_token).transfer(msg.sender, stakers[_id].amount);
         require(result, "Transfer from error");
-        claimRewards(_id);   // Récupérer les rewards en même temps
+        claimRewards(_id); // Récupérer les rewards en même temps
         delete stakers[_id];
 
         totalStakes[_token] -= stakers[_id].amount;
@@ -153,26 +154,26 @@ contract StakingE is Ownable, CrowdV {
 
     /**
      * @notice Calculate rewards
-     * @dev tokenPrice use Chainlink Oracle 
-     * @param id is stakers id
+     * @dev tokenPrice use Chainlink Oracle
+     * @param _id is stakers id
      */
-    function calculateReward(uint256 id) public view returns (uint256) {
+    function calculateReward(uint256 _id) public view returns (uint256) {
         // require(0<stakers[id].amount, "You have not stake this token")
-        uint256 rewardsperseconds = ((pools[stakers[id].token].APR) * 10**8) /
+        uint256 rewardsperseconds = ((pools[stakers[_id].token].APR) * 10**8) /
             (365 * 24 * 3600);
 
-        uint256 rewardsperstakers = (stakers[id].amount * 100) /
-            totalStakes[stakers[id].token];
+        uint256 rewardsperstakers = (stakers[_id].amount * 100) /
+            totalStakes[stakers[_id].token];
 
         uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
 
         uint256 tokenPrice = getLatestPrice(
-            pools[stakers[id].token].addressPrice
+            pools[stakers[_id].token].addressPrice
         );
 
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
-        uint256 rewardstoclaim = (block.timestamp - stakers[id].date) *
+        uint256 rewardstoclaim = (block.timestamp - stakers[_id].date) *
             rewardsInDollar; // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
 
         return rewardstoclaim;
@@ -181,12 +182,25 @@ contract StakingE is Ownable, CrowdV {
     /**
      * @notice Claim your rewards
      * @dev Available only for stakers who have rewards to claim
-     * @param id is stakers id
+     * @param _id is stakers id
      */
-    function claimRewards(uint256 id) public {
-        require(stakers[id].addrStaker == msg.sender, "This is not your id.");
-        uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
-        stakers[id].date = block.timestamp; //Remettre à 0 le timestamp
+    function claimRewards(uint256 _id) public {
+        require(stakers[_id].addrStaker == msg.sender, "This is not your id.");
+        uint256 amoutToClaim = calculateReward(_id) / priceTokenRewardInDollar;
+        stakers[_id].date = block.timestamp; //Remettre à 0 le timestamp
         CrowdV.mint(amoutToClaim);
+    }
+
+    /**
+     * @notice Check if msg.sender is a staker of a pool
+     * @dev Can be used to show the staked pools on the Dapp
+     */
+    function isStaker(address _token) public view returns (bool) {
+        for (uint256 i = 0; i < stakers.length; i++) {
+            if (stakers[i].addrStaker == msg.sender && _token == stakers[i].token ) {
+                return true;
+            }
+        }
+        return false;
     }
 }
