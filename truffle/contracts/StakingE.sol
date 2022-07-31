@@ -25,20 +25,20 @@ contract StakingE is Ownable {
 	mapping (address => TotalStake) totalStakes;
 
 	// Events
-	event NewPool(address tokenAddress); 
+	event NewPool(address tokenAddress);
+	event Stake(address sender, address tokenAddress, uint256 amount);
 
 	
 	/**
 	 * @notice Stake fund into this contract
 	 * @param _amount to stake
 	 * @param _token to stake
+	 * @dev Emit event after stake
 	 */
 	function stake (uint256 _amount, address _token) external {
 		require (_amount > 0, "The amount must be greater than zero.");
 		require (pools[_token], "This token isn't available.");
 		
-		bool resultApprove = IERC20(_token).approve(address(this), _amount);
-        require (resultApprove, "Approve from error");
 		bool result = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
 		require (result, "Transfer from error");
 
@@ -51,15 +51,9 @@ contract StakingE is Ownable {
 		stakers.push(staker);
 
 		totalStakes[_token].amount += _amount;
+
+		emit Stake(msg.sender, _token, _amount);
 	}
-
-
-	function approveForStake (address _token, uint256 _amount) external returns(bool) {
-       bool resultApprove = IERC20(_token).approve(address(this), _amount);
-       require (resultApprove, "Approve from error");
-
-       return resultApprove;
-    }
 
 
 	/**
