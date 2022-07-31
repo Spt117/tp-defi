@@ -15,7 +15,7 @@ import "./CrowdV.sol";
 
 contract StakingE is Ownable, CrowdV {
     uint256 priceTokenRewardInDollar = 1;
-    uint256 private totalStake;
+    // uint256 private totalStake;
 
     struct Token {
         bool activePool;
@@ -35,7 +35,7 @@ contract StakingE is Ownable, CrowdV {
     Staker[] public stakers;
 
     // Save total amount stake by token address
-    mapping(address => uint256) totalStakes;
+    mapping(address => uint256) public totalStakes;
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
@@ -46,6 +46,28 @@ contract StakingE is Ownable, CrowdV {
         uint256 date,
         uint256 id
     );
+
+    /**
+     * @notice Make available token address to add pool
+     * @dev Available only for owner
+     * @param _token is token address
+     * @param _apr is APR of the pool
+     * @param _addressPrice is Chainlink pool
+     * @dev Alyra
+     */
+    function addPool(
+        address _token,
+        uint256 _apr,
+        address _addressPrice
+    ) external onlyOwner {
+        require(!pools[_token].activePool, "This token already exist.");
+
+        pools[_token].activePool = true;
+        pools[_token].APR = _apr;
+        pools[_token].addressPrice = _addressPrice;
+
+        emit NewPool(_token, _apr);
+    }
 
     /**
      * @notice Stake fund into this contract
@@ -78,7 +100,7 @@ contract StakingE is Ownable, CrowdV {
             _token,
             _amount,
             block.timestamp,
-            stakers.length - 1
+            stakers.length - 1 // id du Staker
         );
     }
 
@@ -87,7 +109,6 @@ contract StakingE is Ownable, CrowdV {
      * @param _token to unstake
      * @param _id from the staker
      */
-
     function withdraw(uint256 _id, address _token) external {
         require(
             stakers[_id].addrStaker == msg.sender,
@@ -104,31 +125,10 @@ contract StakingE is Ownable, CrowdV {
         delete stakers[_id];
 
         totalStakes[_token] -= stakers[_id].amount;
-    }
-
-    /**
-     * @notice Make available token address to add pool
-     * @dev Available only for owner
-     * @param _token is token address
-     * @param _apr is APR of the pool
-     * @param _addressPrice is Chainlink pool
-     * @dev Alyra
-     */
-    function addPool(
-        address _token,
-        uint256 _apr,
-        address _addressPrice
-    ) external onlyOwner {
-        require(!pools[_token].activePool, "This token already exist.");
-        pools[_token].activePool = true;
-        pools[_token].APR = _apr;
-        pools[_token].addressPrice = _addressPrice;
-
-        emit NewPool(_token, _apr);
-    }
+    }    //FONTION A VERIFIER + AJOUTER EVENEMENT
 
     function getLatestPrice(address _pairChainlinkAddress)
-        public
+        private
         view
         returns (uint256)
     {
@@ -138,19 +138,18 @@ contract StakingE is Ownable, CrowdV {
         (
             ,
             /*uint80 roundID*/
-            int256 price, /*uint startedAt*/
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/
             ,
             ,
 
-        ) = /*uint timeStamp*/
-            /*uint80 answeredInRound*/
+        ) = /*uint80 answeredInRound*/
             priceFeed.latestRoundData();
 
         return uint256(price);
     }
 
-  
     function calculateReward(uint256 id) public view returns (uint256) {
+        // require(0<stakers[id].amount, "Bad id")
         uint256 rewardsperseconds = ((pools[stakers[id].token].APR) * 10**8) /
             (365 * 24 * 3600);
 
@@ -171,9 +170,8 @@ contract StakingE is Ownable, CrowdV {
         return rewardstoclaim;
     }
 
-    function claimRewards(uint256 id) public {
+    function claimRewards(uint256 id) external {
         uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
-
         CrowdV.mint(amoutToClaim);
-    }
+    } //Remettre à 0 le timestamp
 }
