@@ -19,8 +19,9 @@ contract StakingJB is Ownable, CrowdV {
 
     struct Token {
         bool activePool;
-        uint256 APR;
         address addressPrice; //Chainlink Pool
+        uint256 APR;
+        uint256 dateStop;
     }
 
     // Token address => active pool
@@ -39,6 +40,7 @@ contract StakingJB is Ownable, CrowdV {
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
+    event StopPool(address tokenAddress, uint256 date);
     event Stake(
         address sender,
         address tokenAddress,
@@ -74,10 +76,16 @@ contract StakingJB is Ownable, CrowdV {
         emit NewPool(_token, _apr);
     }
 
-    // function stopPool(address _token) external onlyOwner {
-    //     require(pools[_token].activePool, "Pool is not active or doesn't exist.");
-    //     pools[_token].activePool = false;
-    // }
+    function stopPool(address _token) external onlyOwner {
+        require(
+            pools[_token].activePool,
+            "Pool is not active or doesn't exist."
+        );
+        pools[_token].activePool = false;
+        pools[_token].dateStop = block.timestamp;
+
+        emit StopPool(_token, block.timestamp);
+    }
 
     /**
      * @notice Stake fund into this contract
@@ -135,7 +143,7 @@ contract StakingJB is Ownable, CrowdV {
         claimRewards(_token); // Récupérer les rewards en même temps
 
         stakers[id].amount -= _amount;
-        
+
         totalStakes[_token] -= _amount;
 
         emit Unstake(msg.sender, _token, _amount, block.timestamp);
@@ -168,28 +176,35 @@ contract StakingJB is Ownable, CrowdV {
     /**
      * @notice Calculate rewards
      * @dev tokenPrice use Chainlink Oracle
-     * @param _id is stakers id
+     * @param _token is the token of pool to calculate rewards
      */
-    function calculateReward(uint256 _id) public view returns (uint256) {
+    function calculateReward(address _token) public view returns (uint256) {
+        uint256 id;
+        for (uint256 i = 0; i < stakers.length; i++) {
+            if (
+                stakers[i].addrStaker == msg.sender &&
+                _token == stakers[i].token
+            ) {
+                i = id;
+            }
+        }
         // require(0<stakers[id].amount, "You have not stake this token")
-        uint256 rewardsperseconds = ((pools[stakers[_id].token].APR) * 10**8) /
+        uint256 rewardsperseconds = ((pools[_token].APR) * 10**8) /
             (365 * 24 * 3600);
 
-        uint256 rewardsperstakers = (stakers[_id].amount * 100) /
-            totalStakes[stakers[_id].token];
+        uint256 rewardsperstakers = (stakers[id].amount * 100) /
+            totalStakes[_token];
 
         uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
 
-        uint256 tokenPrice = getLatestPrice(
-            pools[stakers[_id].token].addressPrice
-        );
+        uint256 tokenPrice = getLatestPrice(pools[_token].addressPrice);
 
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
-        uint256 rewardstoclaim = (block.timestamp - stakers[_id].date) *
-            rewardsInDollar; // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
-
-        return rewardstoclaim;
+        if (pools[_token].activePool) {
+            return ((block.timestamp - stakers[id].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+        }
+        return ((pools[_token].dateStop - stakers[id].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
     }
 
     /**
@@ -208,7 +223,7 @@ contract StakingJB is Ownable, CrowdV {
             }
         }
 
-        uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
+        uint256 amoutToClaim = calculateReward(_token) / priceTokenRewardInDollar;
         stakers[id].date = block.timestamp; //Remettre à 0 le timestamp
         CrowdV.mint(amoutToClaim);
     }
@@ -236,6 +251,7 @@ contract StakingJB is Ownable, CrowdV {
      * @param _token is address token of the pool
      */
     function addStake(uint256 _amount, address _token) external {
+        require(pools[_token].activePool, "This token isn't available.");
         require(isStaker(_token), "You are not a staker");
 
         uint256 id;
