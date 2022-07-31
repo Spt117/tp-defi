@@ -121,12 +121,16 @@ contract StakingE is Ownable, CrowdV {
         require(pools[_token].activePool, "This token isn't available.");
         bool result = IERC20(_token).transfer(msg.sender, stakers[_id].amount);
         require(result, "Transfer from error");
-
+        claimRewards(_id);   // Récupérer les rewards en même temps
         delete stakers[_id];
 
         totalStakes[_token] -= stakers[_id].amount;
-    }    //FONTION A VERIFIER + AJOUTER EVENEMENT
+    } //FONTION A VERIFIER + AJOUTER EVENEMENT
 
+    /**
+     * @notice Get price of token with Chainlink
+     * @param _pairChainlinkAddress is the pool adress in $
+     */
     function getLatestPrice(address _pairChainlinkAddress)
         private
         view
@@ -138,18 +142,22 @@ contract StakingE is Ownable, CrowdV {
         (
             ,
             /*uint80 roundID*/
-            int256 price, /*uint startedAt*/ /*uint timeStamp*/
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
             ,
             ,
 
-        ) = /*uint80 answeredInRound*/
-            priceFeed.latestRoundData();
+        ) = priceFeed.latestRoundData();
 
         return uint256(price);
     }
 
+    /**
+     * @notice Calculate rewards
+     * @dev tokenPrice use Chainlink Oracle 
+     * @param id is stakers id
+     */
     function calculateReward(uint256 id) public view returns (uint256) {
-        // require(0<stakers[id].amount, "Bad id")
+        // require(0<stakers[id].amount, "You have not stake this token")
         uint256 rewardsperseconds = ((pools[stakers[id].token].APR) * 10**8) /
             (365 * 24 * 3600);
 
@@ -170,8 +178,15 @@ contract StakingE is Ownable, CrowdV {
         return rewardstoclaim;
     }
 
-    function claimRewards(uint256 id) external {
+    /**
+     * @notice Claim your rewards
+     * @dev Available only for stakers who have rewards to claim
+     * @param id is stakers id
+     */
+    function claimRewards(uint256 id) public {
+        require(stakers[id].addrStaker == msg.sender, "This is not your id.");
         uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
+        stakers[id].date = block.timestamp; //Remettre à 0 le timestamp
         CrowdV.mint(amoutToClaim);
-    } //Remettre à 0 le timestamp
+    }
 }
