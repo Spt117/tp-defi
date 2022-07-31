@@ -25,10 +25,10 @@ contract StakingE is Ownable {
     Staker[] public stakers;
 
     // Save total amount stake by token address
-    struct TotalStake {
-        uint256 amount;
-    }
-    mapping(address => TotalStake) totalStakes;
+    // struct TotalStake {
+    //     uint256 amount;
+    // }
+    mapping(address => uint256) totalStakes;
 
     // // Save total amount stake by token address
     // struct testStakers {
@@ -71,7 +71,7 @@ contract StakingE is Ownable {
         staker.date = block.timestamp;
         stakers.push(staker);
 
-        totalStakes[_token].amount += _amount;
+        totalStakes[_token] += _amount;
 
         emit Stake(
             msg.sender,
@@ -103,7 +103,7 @@ contract StakingE is Ownable {
 
         delete stakers[_id];
 
-        totalStakes[_token].amount -= stakers[_id].amount;
+        totalStakes[_token] -= stakers[_id].amount;
     }
 
     /**
@@ -140,12 +140,16 @@ contract StakingE is Ownable {
     //         (((block.timestamp - s_lastUpdateTime) * REWARD_RATE * 1e18) / s_totalSupply);
     // }
 
-    function calculateReward(uint256 id) public view {
+    function calculateReward(uint256 id) public view returns(uint256) {
         uint256 rewardsperseconds;
         rewardsperseconds = ( pools[stakers[id].token].APR) / (365 * 24 * 3600);
         
         uint256 rewardsperstakers;
-        rewardsperstakers = totalStakes[stakers[id].token] / stakers[id].amount
+        rewardsperstakers = stakers[id].amount * 100 / totalStakes[stakers[id].token] ;
+
+        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers ;
+        
+        return rewardsearnedperseconds;
     }
 
     
