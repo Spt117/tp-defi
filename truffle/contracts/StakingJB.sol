@@ -4,8 +4,11 @@ pragma solidity 0.8.14;
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./CrowdV.sol";
 
-contract StakingE is Ownable {
+contract StakingE is Ownable, CrowdV {
+
+    uint256 priceTokenRewardInDollar = 1;
     uint256 private totalStake;
 
     struct Token {
@@ -121,36 +124,44 @@ contract StakingE is Ownable {
         emit NewPool(_token, _apr);
     }
 
-    // function calculReward() external onlyOwner {
-    //     // for (uint256 i = 0; i < stakers.length; i++) {}
-    // // nombredestakeurs
-    // // ((montantparstakeur * duréededépot)/fréquencedenvoiedesrewards) * montantrewards
-    // // montantotalstaké
-    // ((s_balances[account] * (rewardPerToken() - s_userRewardPerTokenPaid[account])) /
-    //             1e18) + s_rewards[account];
 
-    // }
-
-    // function rewardPerToken() public view returns (uint256) {
-    //     if (s_totalSupply == 0) {
-    //         return s_rewardPerTokenStored;
-    //     }
-    //     return
-    //         s_rewardPerTokenStored +
-    //         (((block.timestamp - s_lastUpdateTime) * REWARD_RATE * 1e18) / s_totalSupply);
-    // }
-
-    function calculateReward(uint256 id) public view returns(uint256) {
-        uint256 rewardsperseconds;
-        rewardsperseconds = ( pools[stakers[id].token].APR) / (365 * 24 * 3600);
+        function getLatestPrice(address _pairChainlinkAddress) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface( _pairChainlinkAddress );
+        (
+            /*uint80 roundID*/,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = priceFeed.latestRoundData();
         
-        uint256 rewardsperstakers;
-        rewardsperstakers = stakers[id].amount * 100 / totalStakes[stakers[id].token] ;
-
-        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers ;
-        
-        return rewardsearnedperseconds;
+        return uint256(price);
     }
 
+    function calculateReward(uint256 id) public view returns(uint256) {
+        
+        uint256 rewardsperseconds = ( pools[stakers[id].token].APR) / (365 * 24 * 3600);
+        
+        uint256 rewardsperstakers = stakers[id].amount * 100 / totalStakes[stakers[id].token];
+
+        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers ;
+
+        uint256 tokenPrice = getLatestPrice(stakers[id].token);
+
+        uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
+        
+        uint256 rewardstoclaim = (stakers[id].date - block.timestamp) * rewardsInDollar;
+
+        return rewardstoclaim;
+    }
+
+  
+
+    function claimRewards(uint256 id) public {
+        
+        uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
+
+        CrowdV.mint(msg.sender, amoutToClaim);  
+    }
     
 }

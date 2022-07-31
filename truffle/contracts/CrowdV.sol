@@ -18,7 +18,7 @@ contract CrowdV is ERC20 {
      * @param _staker is staker's address
      * @param _amount is amout's rewards
      */
-    function mint(address _staker, uint256 _amount) public {
+    function mint(address _staker, uint256 _amount) internal {
         _mint(_staker, _amount);
     }
 }
