@@ -7,13 +7,13 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
 import "./CrowdV.sol";
 
 contract StakingE is Ownable, CrowdV {
-
     uint256 priceTokenRewardInDollar = 1;
     uint256 private totalStake;
 
     struct Token {
         bool activePool;
         uint256 APR;
+        address addressPrice; //Chainlink Pool
     }
 
     // Token address => active pool
@@ -114,54 +114,67 @@ contract StakingE is Ownable, CrowdV {
      * @dev Available only for owner
      * @param _token is token address
      * @param _apr is APR of the pool
+     * @param _addressPrice is Chainlink pool
      * @dev Alyra
      */
-    function addPool(address _token, uint256 _apr) external onlyOwner {
+    function addPool(
+        address _token,
+        uint256 _apr,
+        address _addressPrice
+    ) external onlyOwner {
         require(!pools[_token].activePool, "This token already exist.");
         pools[_token].activePool = true;
         pools[_token].APR = _apr;
+        pools[_token].addressPrice = _addressPrice;
 
         emit NewPool(_token, _apr);
     }
 
-
-        function getLatestPrice(address _pairChainlinkAddress) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface( _pairChainlinkAddress );
+    function getLatestPrice(address _pairChainlinkAddress)
+        public
+        view
+        returns (uint256)
+    {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            _pairChainlinkAddress
+        );
         (
-            /*uint80 roundID*/,
-            int price,
-            /*uint startedAt*/,
-            /*uint timeStamp*/,
+            ,
+            /*uint80 roundID*/
+            int256 price,
+            ,
+            ,
+
+        ) = /*uint startedAt*/
+            /*uint timeStamp*/
             /*uint80 answeredInRound*/
-        ) = priceFeed.latestRoundData();
-        
+            priceFeed.latestRoundData();
+
         return uint256(price);
     }
 
-    function calculateReward(uint256 id) public view returns(uint256) {
-        
-        uint256 rewardsperseconds = ( pools[stakers[id].token].APR) / (365 * 24 * 3600);
-        
-        uint256 rewardsperstakers = stakers[id].amount * 100 / totalStakes[stakers[id].token];
+    function calculateReward(uint256 id) public view returns (uint256) {
+        uint256 rewardsperseconds = (pools[stakers[id].token].APR) /
+            (365 * 24 * 3600);
 
-        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers ;
+        uint256 rewardsperstakers = (stakers[id].amount * 100) /
+            totalStakes[stakers[id].token];
 
-        uint256 tokenPrice = getLatestPrice(stakers[id].token);
+        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
+
+        uint256 tokenPrice = getLatestPrice(pools[stakers[id].token].addressPrice);
 
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
-        
-        uint256 rewardstoclaim = (stakers[id].date - block.timestamp) * rewardsInDollar;
+
+        uint256 rewardstoclaim = (stakers[id].date - block.timestamp) *
+            rewardsInDollar;
 
         return rewardstoclaim;
     }
 
-  
-
     function claimRewards(uint256 id) public {
-        
         uint256 amoutToClaim = calculateReward(id) / priceTokenRewardInDollar;
 
-        CrowdV.mint(msg.sender, amoutToClaim);  
+        CrowdV.mint(msg.sender, amoutToClaim);
     }
-    
 }
