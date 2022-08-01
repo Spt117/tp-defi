@@ -84,7 +84,7 @@
 								</div>
 							</div>
 
-							<div class="row form-group" v-if="pools[key].approve && pools[key].totalAccountStake">
+							<div class="row form-group" v-if="pools[key].approve && pools[key].totalAccountStake > 0">
 								<div class="col-9">
 									<input type="text" class="form-control" :class="(pools[key].amountUnstakeError) ? 'is-invalid' : ''" autocomplete="off" placeholder="Amount" v-model="pools[key].amountUnstake">
 									<div class="invalid-feedback">{{ pools[key].amountUnstakeError }}</div>
@@ -94,9 +94,9 @@
 								</div>
 							</div>
 
-							<div class="mt-3 text-center" v-if="pools[key].totalAccountStake">
+							<div class="mt-3 text-center" v-if="pools[key].totalAccountStake > 0">
 								<button class="btn btn-primary" @click="claimRewards(pools[key].token)">Claim rewards</button>
-								<p v-if="pools[key].rewards">Your rewards : {{ pools[key].rewards }}</p>
+								<p v-if="pools[key].rewards" class="mt-2">Your rewards : {{ pools[key].rewards }}</p>
 							</div>
 
 							<div class="alert alert-success p-2 mt-4" v-if="pools[key].success" role="alert">{{ pools[key].success }}</div>
@@ -216,9 +216,10 @@
 			 * Prepare revert message
 			 */
 			parseRevertMsg (revert) {
-				revert = revert.message.split('Internal JSON-RPC error.')[1].trim()
+				return error
+				/*revert = revert.message.split('Internal JSON-RPC error.')[1].trim()
 				revert = JSON.parse(revert)
-				return revert.message.split('revert ')[1]
+				return revert.message.split('revert ')[1]*/
 			},
 
 			/**
@@ -250,7 +251,9 @@
 						rewards: 0
 					}
 					
-					this.rewards(i)
+					if (this.pools[i].totalAccountStake > 0) {
+						this.rewards(i)
+					}
 					this.getApproveEvent(pools[i].returnValues.tokenAddress)
 				}
 			},
@@ -353,7 +356,7 @@
 				} else {
 					this.pools[key].amountUnstakeError = false
 					try {
-						await this.instance.methods.withdraw(addressToken, this.pools[key].amountUnstake).send({ from: this.accounts[0] })
+						await this.instance.methods.withdraw( addressToken, this.pools[key].amountUnstake,).send({ from: this.accounts[0] })
 						this.pools[key].amountUnstake = null
 						this.pools[key].success = 'Unstake has been successed.'
 					} catch (error) {
@@ -370,13 +373,13 @@
 			},
 
 			rewards (key) {
-				/*let self = this
+				let self = this
 				setInterval(async () => {
 					let rewards = await this.instance.methods.calculateReward(self.pools[key].token).call({ from: this.accounts[0] })
 					console.log(rewards)
 					self.pools[key].rewards = rewards / 10**8
  
-				}, 20000);*/
+				}, 8000);
 			},
 
 			/**
