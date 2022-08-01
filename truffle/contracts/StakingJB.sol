@@ -28,12 +28,14 @@ contract StakingJB is Ownable, CrowdV {
     mapping(address => Token) public pools;
 
     struct Staker {
-        address addrStaker; // Address of wallet want stake
-        address token; // Address of token stake
+        // address addrStaker; // Address of wallet want stake
+        // address token; // Address of token stake
         uint256 amount; // Amount token stake
         uint256 date; // Date of stake start
     }
-    Staker[] public stakers;
+    // Staker[] public stakers;
+    // address token => address Staker => Informations Staker
+    mapping (address => mapping (address => Staker)) public stakers;
 
     // Save total amount stake by token address
     mapping(address => uint256) public totalStakes;
@@ -105,12 +107,12 @@ contract StakingJB is Ownable, CrowdV {
         );
         require(result, "Transfer from error");
 
-        Staker memory staker;
-        staker.addrStaker = msg.sender;
-        staker.token = _token;
-        staker.amount = _amount;
-        staker.date = block.timestamp;
-        stakers.push(staker);
+        stakers[_token][msg.sender] = Staker(_amount, block.timestamp);
+        // Staker memory staker;
+        // staker.addrStaker = msg.sender;
+        // staker.token = _token;
+        // staker.amount = _amount;
+        // staker.date = block.timestamp;
 
         totalStakes[_token] += _amount;
 
@@ -126,23 +128,14 @@ contract StakingJB is Ownable, CrowdV {
         require(isStaker(_token), "You are not a staker");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
 
-        uint256 id;
-        for (uint256 i = 0; i < stakers.length; i++) {
-            if (
-                stakers[i].addrStaker == msg.sender &&
-                _token == stakers[i].token
-            ) {
-                i = id;
-            }
-        }
-        require(stakers[id].amount >= _amount, "You don't have this amount");
+
 
         bool result = IERC20(_token).transfer(msg.sender, _amount);
         require(result, "Transfer from error");
 
         claimRewards(_token); // Récupérer les rewards en même temps
 
-        stakers[id].amount -= _amount;
+        stakers[_token][msg.sender].amount -= _amount;
 
         totalStakes[_token] -= _amount;
 
@@ -179,20 +172,12 @@ contract StakingJB is Ownable, CrowdV {
      * @param _token is the token of pool to calculate rewards
      */
     function calculateReward(address _token) public view returns (uint256) {
-        uint256 id;
-        for (uint256 i = 0; i < stakers.length; i++) {
-            if (
-                stakers[i].addrStaker == msg.sender &&
-                _token == stakers[i].token
-            ) {
-                i = id;
-            }
-        }
-        // require(0<stakers[id].amount, "You have not stake this token")
+        require(isStaker(_token), "You are not a staker");
+        
         uint256 rewardsperseconds = ((pools[_token].APR) * 10**8) /
             (365 * 24 * 3600);
 
-        uint256 rewardsperstakers = (stakers[id].amount * 100) /
+        uint256 rewardsperstakers = (stakers[_token][msg.sender].amount * 100) /
             totalStakes[_token];
 
         uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
@@ -202,9 +187,9 @@ contract StakingJB is Ownable, CrowdV {
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
         if (pools[_token].activePool) {
-            return ((block.timestamp - stakers[id].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+            return ((block.timestamp - stakers[_token][msg.sender].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
         }
-        return ((pools[_token].dateStop - stakers[id].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+        return ((pools[_token].dateStop - stakers[_token][msg.sender].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
     }
 
     /**
@@ -213,19 +198,13 @@ contract StakingJB is Ownable, CrowdV {
      * @param _token is token of the pool to claim rewards
      */
     function claimRewards(address _token) public {
-        uint256 id;
-        for (uint256 i = 0; i < stakers.length; i++) {
-            if (
-                stakers[i].addrStaker == msg.sender &&
-                _token == stakers[i].token
-            ) {
-                i = id;
-            }
-        }
+        require(isStaker(_token), "You are not a staker");
 
         uint256 amoutToClaim = calculateReward(_token) / priceTokenRewardInDollar;
-        stakers[id].date = block.timestamp; //Remettre à 0 le timestamp
+        stakers[_token][msg.sender].date = block.timestamp; //Remettre à 0 le timestamp
         CrowdV.mint(amoutToClaim);
+        bool result = IERC20(_token).transfer(msg.sender, amoutToClaim);
+        require(result, "Transfer from error");
     }
 
     /**
@@ -234,14 +213,13 @@ contract StakingJB is Ownable, CrowdV {
      * @param _token is address token of a pool
      */
     function isStaker(address _token) public view returns (bool) {
-        for (uint256 i = 0; i < stakers.length; i++) {
+        
             if (
-                stakers[i].addrStaker == msg.sender &&
-                _token == stakers[i].token
+             stakers[_token][msg.sender].amount>0
             ) {
                 return true;
             }
-        }
+        
         return false;
     }
 
@@ -254,16 +232,6 @@ contract StakingJB is Ownable, CrowdV {
         require(pools[_token].activePool, "This token isn't available.");
         require(isStaker(_token), "You are not a staker");
 
-        uint256 id;
-        for (uint256 i = 0; i < stakers.length; i++) {
-            if (
-                stakers[i].addrStaker == msg.sender &&
-                _token == stakers[i].token
-            ) {
-                i = id;
-            }
-        }
-
         bool result = IERC20(_token).transferFrom(
             msg.sender,
             address(this),
@@ -271,7 +239,7 @@ contract StakingJB is Ownable, CrowdV {
         );
         require(result, "Transfer from error");
 
-        stakers[id].amount += _amount;
+        stakers[_token][msg.sender].amount += _amount;
         totalStakes[_token] += _amount;
 
         claimRewards(_token);
