@@ -62,7 +62,6 @@ contract Staking is Ownable, CrowdV {
      * @param _token is token address
      * @param _apr is APR of the pool
      * @param _addressPrice is Chainlink pool
-     * @dev Alyra
      */
     function addPool(
         address _token,
@@ -78,6 +77,11 @@ contract Staking is Ownable, CrowdV {
         emit NewPool(_token, _apr);
     }
 
+    /**
+     * @notice disable a pool
+     * @dev Available only for owner
+     * @param _token is token address
+     */
     function stopPool(address _token) external onlyOwner {
         require(
             pools[_token].activePool,
@@ -108,11 +112,6 @@ contract Staking is Ownable, CrowdV {
         require(result, "Transfer from error");
 
         stakers[_token][msg.sender] = Staker(_amount, block.timestamp);
-        // Staker memory staker;
-        // staker.addrStaker = msg.sender;
-        // staker.token = _token;
-        // staker.amount = _amount;
-        // staker.date = block.timestamp;
 
         totalStakes[_token] += _amount;
 
@@ -125,8 +124,9 @@ contract Staking is Ownable, CrowdV {
      * @param _token is address token of the pool
      */
     function addStake(uint256 _amount, address _token) external {
-        require(pools[_token].activePool, "This token isn't available.");
         require(isStaker(_token), "You are not a staker");
+        require(pools[_token].activePool, "This token isn't available.");
+        require(_amount > 0, "The amount must be greater than zero.");
 
         bool result = IERC20(_token).transferFrom(
             msg.sender,
