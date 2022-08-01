@@ -39,6 +39,11 @@ contract Staking is Ownable, CrowdV {
 
     // Save total amount stake by token address
     mapping(address => uint256) public totalStakes;
+    
+    // Save total amount with timestamp
+    // token => block.timestamp => totalStakes
+    mapping(address => mapping(uint256 => uint256)) stakingTime;
+
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
@@ -113,6 +118,8 @@ contract Staking is Ownable, CrowdV {
 
         stakers[_token][msg.sender] = Staker(_amount, block.timestamp);
 
+        stakingTime[_token][block.timestamp] =  totalStakes[_token] + _amount;
+
         totalStakes[_token] += _amount;
 
         emit Stake(msg.sender, _token, _amount, block.timestamp);
@@ -136,6 +143,9 @@ contract Staking is Ownable, CrowdV {
         require(result, "Transfer from error");
 
         stakers[_token][msg.sender].amount += _amount;
+
+        stakingTime[_token][block.timestamp] =  totalStakes[_token] + _amount;
+
         totalStakes[_token] += _amount;
 
         claimRewards(_token);
@@ -148,8 +158,9 @@ contract Staking is Ownable, CrowdV {
      * @param _token to unstake
      * @param _amount number of token to unstake
      */
-    function withdraw(address _token, uint256 _amount) external {
+    function withdraw(uint256 _amount, address _token) external {
         require(isStaker(_token), "You are not a staker");
+        require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
 
         bool result = IERC20(_token).transfer(msg.sender, _amount);
@@ -158,6 +169,8 @@ contract Staking is Ownable, CrowdV {
         claimRewards(_token); // Récupérer les rewards en même temps
 
         stakers[_token][msg.sender].amount -= _amount;
+
+        stakingTime[_token][block.timestamp] =  totalStakes[_token] - _amount;
 
         totalStakes[_token] -= _amount;
 
