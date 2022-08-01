@@ -72,7 +72,7 @@
 								<p class="card-subtitle mb-2 text-muted mb-2 col-6">Reward APR : {{ pool.apr }}</p>
 								<p class="card-subtitle mb-2 text-muted mb-4 col-6 text-end">Earn : CRDV</p>
 							</div>
-							<button class="btn-primary btn" @click="approveStakingContract(pool.token, key)" v-if="!pools[key].approve && pools[key].totalAccountStake == 0">Approve</button>
+							<button class="btn-primary btn" @click="approveStakingContract(pool.token, key)" v-if="!pools[key].approve && pools[key].totalAccountStake == 0">Approve the contract</button>
 
 							<div class="form-group mb-3 row" v-if="pools[key].approve">
 								<div class="col-9">
@@ -96,6 +96,7 @@
 
 							<div class="mt-3 text-center" v-if="pools[key].totalAccountStake">
 								<button class="btn btn-primary" @click="claimRewards(pools[key].token)">Claim rewards</button>
+								<p v-if="pools[key].rewards">Your rewards : {{ pools[key].rewards }}</p>
 							</div>
 
 							<div class="alert alert-success p-2 mt-4" v-if="pools[key].success" role="alert">{{ pools[key].success }}</div>
@@ -245,9 +246,11 @@
 						approve: false,
 						amountStakeError: false,
 						amountUnstakeError: false,
-						success: false
+						success: false,
+						rewards: 0
 					}
 					
+					this.rewards(i)
 					this.getApproveEvent(pools[i].returnValues.tokenAddress)
 				}
 			},
@@ -366,13 +369,22 @@
 				this.pools[key].totalAccountStake = await this.getStakingByPoolByAccount(this.pools[key].token)
 			},
 
+			rewards (key) {
+				/*let self = this
+				setInterval(async () => {
+					let rewards = await this.instance.methods.calculateReward(self.pools[key].token).call({ from: this.accounts[0] })
+					console.log(rewards)
+					self.pools[key].rewards = rewards / 10**8
+ 
+				}, 20000);*/
+			},
+
 			/**
 			 * Claim
 			 */
 			async claimRewards (addressToken) {
 				try {
 					await this.instance.methods.claimRewards(addressToken,).send({ from: this.accounts[0] })
-					console.log('Yes')
 				} catch (error) {
 					await this.instance.methods.claimRewards(addressToken).call({ from: this.accounts[0] })
 					.then(result => {}).catch(revert => {
