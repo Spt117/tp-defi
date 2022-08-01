@@ -203,6 +203,7 @@ contract StakingJB is Ownable, CrowdV {
         uint256 amoutToClaim = calculateReward(_token) / priceTokenRewardInDollar;
         stakers[_token][msg.sender].date = block.timestamp; //Remettre à 0 le timestamp
         CrowdV.mint(amoutToClaim);
+        CrowdV.approve(msg.sender, amoutToClaim);
         bool result = IERC20(_token).transfer(msg.sender, amoutToClaim);
         require(result, "Transfer from error");
     }
@@ -245,5 +246,9 @@ contract StakingJB is Ownable, CrowdV {
         claimRewards(_token);
 
         emit Stake(msg.sender, _token, _amount, block.timestamp);
+    }
+
+    function getStaking (address _token) external returns (uint256) {
+        return stakers[_token][msg.sender].amount ;
     }
 }
