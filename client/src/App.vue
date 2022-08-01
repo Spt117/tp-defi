@@ -1,5 +1,7 @@
 <script setup>
-	import StakingContract from '@/contracts/StakingJB.json'
+	import StakingContract from '@/contracts/Staking.json'
+	import ERC20Contract from "@/contracts/ERC20.json";
+
 	import getWeb3 from '@/utils/getWeb3'
 
 	import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -9,8 +11,8 @@
 	<header class="navbar navbar-dark mb-5 bg-primary">
 		<div class="container">
 			<p class="navbar-brand align-middle mb-0">Alyra - Staking Project</p>
-			<div class="d-flex">
-				<p>
+			<div class="d-flex text-light align-middle">
+				<p class="mb-0">
 					{{ connectedWallet }}
 					<span v-if="currentOwner">(Owner)</span>
 				</p>
@@ -19,14 +21,14 @@
 	</header>
 
 	<div class="container">
-		<div class="mb-3 text-end" v-if="owner">
+		<div class="mb-3 text-end" v-if="currentOwner">
 			<button class="btn btn-success" :class="(!displayAddPoolForm) ? 'btn-success' : 'btn-danger'" @click="displayAddPool()">
 				<span v-if="!displayAddPoolForm"><i class="bi bi-plus"></i> Add a new pool</span>
 				<span v-else><i class="bi bi-x"></i> Hide add a pool</span>
 			</button>
 		</div>
 
-		<div id="all-pools" class="mb-5 bg-white p-3 shadow-sm" v-if="owner" v-show="displayAddPoolForm">
+		<div id="all-pools" class="mb-5 bg-white p-3 shadow-sm" v-if="currentOwner" v-show="displayAddPoolForm">
 			<div class="form-group">
 				<div class="form-group mb-3">
 					<label for="token" class="form-label fw-bold">Token address:</label>
@@ -56,75 +58,49 @@
 			</div>
 		</div>
 
-		<div id="pools" class="mt-5">
+		<div id="pools" class="mt-5" v-if="Object.keys(pools).length">
 			<h2>Pools availables</h2>
 			<div class="row mt-4">
-				<div class="col-4 d-flex align-items-stretch">
+				<div class="col-4 d-flex mb-4 align-items-stretch" v-for="(pool, key) in pools">
 					<div class="card w-100 shadow-sm border-0">
 						<div class="card-header bg-white p-3">
-							<h2 class="fs-5 mb-2">Staking DAI</h2>
-							<p class="mb-0">Total staking: <span class="badge bg-secondary">0 $</span></p>
+							<h2 class="fs-5 mb-2">{{ pool.symbol }}</h2>
+							<p class="mb-0">Total staking: <span class="badge bg-secondary">{{ pool.totalStakes }}</span></p>
 						</div>
 						<div class="card-body">
 							<div class="row">
-								<p class="card-subtitle mb-2 text-muted mb-2 col-6">Reward APR : 8%</p>
-								<p class="card-subtitle mb-2 text-muted mb-4 col-6 text-end">Earn : MY</p>
+								<p class="card-subtitle mb-2 text-muted mb-2 col-6">Reward APR : {{ pool.apr }}</p>
+								<p class="card-subtitle mb-2 text-muted mb-4 col-6 text-end">Earn : CRDV</p>
 							</div>
-							<button class="btn-primary btn">Approve</button>
-							<p class="mt-3">Total stake by you in this pool : <strong>0</strong></p>
-						</div>
-					</div>
-				</div>
-				<div class="col-4 d-flex align-items-stretch">
-					<div class="card w-100 shadow-sm border-0">
-						<div class="card-header bg-white p-3">
-							<h2 class="fs-5 mb-2">Staking ETH</h2>
-							<p class="mb-0">Total staking: <span class="badge bg-secondary">1000 $</span></p>
-						</div>
-						<div class="card-body">
-							<div class="row">
-								<p class="card-subtitle mb-2 text-muted mb-2 col-6">Reward APR : 2%</p>
-								<p class="card-subtitle mb-2 text-muted mb-4 col-6 text-end">Earn : MY</p>
-							</div>
-							<div class="form-group mb-3 row">
+							<button class="btn-primary btn" @click="approveStakingContract(pool.token, key)" v-if="!pools[key].approve && pools[key].totalAccountStake == 0">Approve</button>
+
+							<div class="form-group mb-3 row" v-if="pools[key].approve">
 								<div class="col-9">
-									<input type="text" class="form-control" placeholder="Amount">
+									<input type="text" class="form-control" :class="(pools[key].amountStakeError) ? 'is-invalid' : ''" placeholder="Amount" autocomplete="off" v-model="pools[key].amountStake">
+									<div class="invalid-feedback">{{ pools[key].amountStakeError }}</div>
 								</div>
-								<div class="col-3">
-									<button class="btn-success btn w-100">Stake</button>
-								</div>
-							</div>
-							<p class="mt-3">Total stake by you in this pool : <strong>0</strong></p>
-						</div>
-					</div>
-				</div>
-				<div class="col-4 d-flex align-items-stretch">
-					<div class="card w-100 shadow-sm border-0">
-						<div class="card-header bg-white p-3">
-							<h2 class="fs-5 mb-2">Staking ETH</h2>
-							<p class="mb-0">Total staking: <span class="badge bg-secondary">1000 $</span></p>
-						</div>
-						<div class="card-body">
-							<div class="row">
-								<p class="card-subtitle mb-2 text-muted mb-2 col-6">Reward APR : 2%</p>
-								<p class="card-subtitle mb-2 text-muted mb-4 col-6 text-end">Earn : MY</p>
-							</div>
-							<div class="form-group mb-3 row">
-								<div class="col-9">
-									<input type="text" class="form-control" placeholder="Amount">
-								</div>
-								<div class="col-3">
-									<button class="btn-success btn w-100">Stake</button>
+								<div class="col-3 text-end">
+									<button class="btn-success btn w-100" @click="stake(pools[key].token, key)">Stake</button>
 								</div>
 							</div>
 
-							<p class="fw-bold mt-5">Your stakes</p>
-							<ul class="list-group">
-								<li class="list-group-item d-flex justify-content-between align-items-center">
-									Staked 1000 ETH<button class="btn btn-warning">Unstake</button>
-								</li>
-							</ul>
-							<p class="mt-3">Total stake by you in this pool : <strong>1000</strong></p>
+							<div class="row form-group" v-if="pools[key].approve && pools[key].totalAccountStake">
+								<div class="col-9">
+									<input type="text" class="form-control" :class="(pools[key].amountUnstakeError) ? 'is-invalid' : ''" autocomplete="off" placeholder="Amount" v-model="pools[key].amountUnstake">
+									<div class="invalid-feedback">{{ pools[key].amountUnstakeError }}</div>
+								</div>
+								<div class="text-end col-3">
+									<button class="btn btn-warning" @click="unstake(pools[key].token, key)">Unstake</button>
+								</div>
+							</div>
+
+							<div class="mt-3 text-center" v-if="pools[key].totalAccountStake">
+								<button class="btn btn-primary" @click="claimRewards(pools[key].token)">Claim rewards</button>
+							</div>
+
+							<div class="alert alert-success p-2 mt-4" v-if="pools[key].success" role="alert">{{ pools[key].success }}</div>
+
+							<p class="mt-3">Total stake by you in this pool : <strong>{{ pools[key].totalAccountStake }}</strong></p>
 						</div>
 					</div>
 				</div>
@@ -142,6 +118,7 @@
 				accounts: false,
 				instance: false,
 				connectedWallet: false,
+				addressContract: false,
 				owner: false,
 				currentOwner: false,
 				pools: [],
@@ -164,6 +141,7 @@
 				const networkId = await this.web3.eth.net.getId()
 				const deployedNetwork = StakingContract.networks[networkId]
 				this.instance = await new this.web3.eth.Contract(StakingContract.abi, deployedNetwork && deployedNetwork.address)
+				this.addressContract = deployedNetwork.address
 				this.owner = await this.instance.methods.owner().call()
 
 				this.checkCurrentIsOwner()
@@ -190,10 +168,11 @@
 
 					try {
 						await this.instance.methods.addPool(this.addPoolFields.token.value, this.addPoolFields.apr.value, this.addPoolFields.addressPrice.value).send({ from: this.accounts[0] })
+						await this.getPools()
 						this.notifAddPool = { type: 'success', message: 'The new pool has been added.' }
 						this.addPoolFields.token.value = null
-						this.addPoolFields.token.value = null
-						this.addPoolFields.token.value = null
+						this.addPoolFields.apr.value = null
+						this.addPoolFields.addressPrice.value = null
 						this.loaderAddPool = false
 					} catch (error) {
 						await this.instance.methods.addPool(this.addPoolFields.token.value, this.addPoolFields.apr.value, this.addPoolFields.addressPrice.value).call({ from: this.accounts[0] })
@@ -247,10 +226,165 @@
 			displayAddPool () {
 				this.displayAddPoolForm = !this.displayAddPoolForm
 				this.notifAddPool.message = false
+			},
+
+			/**
+			 * Get all pool by event
+			 */
+			async getPools () {
+				const pools = await this.instance.getPastEvents('NewPool', { fromBlock: 0 })
+				for (let i = 0; i < pools.length; i++) {
+					this.pools[i] = {
+						token: pools[i].returnValues.tokenAddress,
+						apr: pools[i].returnValues.APR,
+						totalStakes: await this.getStakingTotal(pools[i].returnValues.tokenAddress),
+						symbol: await this.getSymbol(pools[i].returnValues.tokenAddress),
+						totalAccountStake: await this.getStakingByPoolByAccount(pools[i].returnValues.tokenAddress),
+						amountStake: null,
+						amountUnstake: null,
+						approve: false,
+						amountStakeError: false,
+						amountUnstakeError: false,
+						success: false
+					}
+					
+					this.getApproveEvent(pools[i].returnValues.tokenAddress)
+				}
+			},
+
+			/**
+			 * Get Symbol at token address
+			 */
+			async getSymbol (addressToken) {
+				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
+				return await token.methods.symbol().call()
+			},
+
+			/**
+			 * Get Staking total  by pool
+			 */
+			async getStakingTotal (addressToken) {
+				return await this.instance.methods.totalStakes(addressToken).call({ from: this.accounts[0] })
+			},
+
+			/**
+			 * Get staking amount by pool 
+			 */
+			async getStakingByPoolByAccount (addressToken) {
+				return await this.instance.methods.getStaking(addressToken).call({ from: this.accounts[0] })
+			},
+
+			/**
+			 * Get appove staking
+			 */
+			async approveStakingContract (addressToken, key) {
+				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
+				await token.methods.approve(this.addressContract, 10000000000000).send({ from: this.accounts[0] })
+				this.pools[key].approve = true
+			},
+
+			/**
+			 * Get event approve
+			 */
+			async getApproveEvent (addressToken) {
+				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
+				const approval = await token.getPastEvents('Approval', { fromBlock: 0 })
+
+				for (let i = 0; i < approval.length; i++) {
+					if (approval[i].returnValues.owner == this.accounts[0]) {
+						this.pools[i].approve = true
+					}
+				}
+			},
+
+
+			/**
+			 * Event stake
+			 */
+			async eventStake () {
+				const approval = await token.getPastEvents('Approval', { fromBlock: 0 })
+			},
+
+			/**
+			 * Stake
+			 */
+			async stake (addressToken, key) {
+				if (!this.pools[key].amountStake) {
+					this.pools[key].amountStakeError = 'Please enter an amount';
+				} else if (!Number.isInteger(this.pools[key].amountStake * 1)) {
+					this.pools[key].amountStakeError = 'Please enter a number.';
+				} else {
+					this.pools[key].amountStakeError = false
+					this.pools[key].success = false
+
+					let fnName = 'stake'
+					if (this.pools[key].totalAccountStake > 0) {
+						fnName = 'addStake'
+					}
+
+					try {
+						await this.instance.methods[fnName](this.pools[key].amountStake, addressToken).send({ from: this.accounts[0] })
+						this.pools[key].amountStake = null
+						this.pools[key].success = 'Stake has been created.'
+					} catch (error) {
+						await this.instance.methods[fnName](this.pools[key].amountStake, addressToken).call({ from: this.accounts[0] })
+						.then(result => {}).catch(revert => {
+							console.log(this.parseRevertMsg(revert))				
+						})
+					}
+	
+					this.pools[key].totalStakes = await this.getStakingTotal(this.pools[key].token)
+					this.pools[key].totalAccountStake = await this.getStakingByPoolByAccount(this.pools[key].token)
+				}
+
+			},
+			
+			/**
+			 * Unstake
+			 */
+			async unstake (addressToken, key) {
+				if (!this.pools[key].amountUnstake) {
+					this.pools[key].amountUnstakeError = 'Please enter an amount';
+				} else if (!Number.isInteger(this.pools[key].amountUnstake * 1)) {
+					this.pools[key].amountUnstakeError = 'Please enter a number.';
+				} else {
+					this.pools[key].amountUnstakeError = false
+					try {
+						await this.instance.methods.withdraw(addressToken, this.pools[key].amountUnstake).send({ from: this.accounts[0] })
+						this.pools[key].amountUnstake = null
+						this.pools[key].success = 'Unstake has been successed.'
+					} catch (error) {
+						await this.instance.methods.withdraw(addressToken, this.pools[key].amountUnstake).call({ from: this.accounts[0] })
+						.then(result => {}).catch(revert => {
+							console.log(revert)
+							console.log(this.parseRevertMsg(revert))				
+						})
+					}
+				}
+
+				this.pools[key].totalStakes = await this.getStakingTotal(this.pools[key].token)
+				this.pools[key].totalAccountStake = await this.getStakingByPoolByAccount(this.pools[key].token)
+			},
+
+			/**
+			 * Claim
+			 */
+			async claimRewards (addressToken) {
+				try {
+					await this.instance.methods.claimRewards(addressToken,).send({ from: this.accounts[0] })
+					console.log('Yes')
+				} catch (error) {
+					await this.instance.methods.claimRewards(addressToken).call({ from: this.accounts[0] })
+					.then(result => {}).catch(revert => {
+						console.log(revert)
+						console.log(this.parseRevertMsg(revert))				
+					})
+				}
 			}
 		},
 		async mounted () {
 			await this.checkConnectedWallet()
+			await this.getPools()
 		}
 	}
 </script>
