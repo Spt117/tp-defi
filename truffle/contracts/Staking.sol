@@ -125,8 +125,8 @@ contract Staking is Ownable, CrowdV {
      */
     function addStake(uint256 _amount, address _token) external {
         require(isStaker(_token), "You are not a staker");
-        require(pools[_token].activePool, "This token isn't available.");
         require(_amount > 0, "The amount must be greater than zero.");
+        require(pools[_token].activePool, "This token isn't available.");
 
         bool result = IERC20(_token).transferFrom(
             msg.sender,
