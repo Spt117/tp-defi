@@ -7,13 +7,13 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
 import "./CrowdV.sol";
 
 /**
- * @title Staking : a Staking Plateforme !
+ * @title Staking : a Staking Plateform !
  *
  * @author Anthony - Etienne - Jean-Baptiste
  *
  */
 
-contract StakingJB is Ownable, CrowdV {
+contract Staking is Ownable, CrowdV {
     uint256 priceTokenRewardInDollar = 1;
     // uint256 private totalStake;
 
