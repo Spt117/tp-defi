@@ -35,7 +35,7 @@ contract StakingJB is Ownable, CrowdV {
     }
     // Staker[] public stakers;
     // address token => address Staker => Informations Staker
-    mapping (address => mapping (address => Staker)) public stakers;
+    mapping(address => mapping(address => Staker)) stakers;
 
     // Save total amount stake by token address
     mapping(address => uint256) public totalStakes;
@@ -128,8 +128,6 @@ contract StakingJB is Ownable, CrowdV {
         require(isStaker(_token), "You are not a staker");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
 
-
-
         bool result = IERC20(_token).transfer(msg.sender, _amount);
         require(result, "Transfer from error");
 
@@ -173,7 +171,7 @@ contract StakingJB is Ownable, CrowdV {
      */
     function calculateReward(address _token) public view returns (uint256) {
         require(isStaker(_token), "You are not a staker");
-        
+
         uint256 rewardsperseconds = ((pools[_token].APR) * 10**8) /
             (365 * 24 * 3600);
 
@@ -187,9 +185,11 @@ contract StakingJB is Ownable, CrowdV {
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
         if (pools[_token].activePool) {
-            return ((block.timestamp - stakers[_token][msg.sender].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+            return ((block.timestamp - stakers[_token][msg.sender].date) *
+                rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
         }
-        return ((pools[_token].dateStop - stakers[_token][msg.sender].date) * rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+        return ((pools[_token].dateStop - stakers[_token][msg.sender].date) *
+            rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
     }
 
     /**
@@ -200,28 +200,10 @@ contract StakingJB is Ownable, CrowdV {
     function claimRewards(address _token) public {
         require(isStaker(_token), "You are not a staker");
 
-        uint256 amoutToClaim = calculateReward(_token) / priceTokenRewardInDollar;
+        uint256 amoutToClaim = calculateReward(_token) /
+            priceTokenRewardInDollar;
         stakers[_token][msg.sender].date = block.timestamp; //Remettre à 0 le timestamp
-        CrowdV.mint(amoutToClaim);
-        // CrowdV.approve(msg.sender, amoutToClaim);
-        bool result = IERC20(_token).transfer(msg.sender, amoutToClaim);
-        require(result, "Transfer from error");
-    }
-
-    /**
-     * @notice Check if msg.sender is a staker of a pool
-     * @dev Can be used to show the staked pools on the Dapp
-     * @param _token is address token of a pool
-     */
-    function isStaker(address _token) public view returns (bool) {
-        
-            if (
-             stakers[_token][msg.sender].amount>0
-            ) {
-                return true;
-            }
-        
-        return false;
+        _mint(msg.sender, amoutToClaim);
     }
 
     /**
@@ -248,7 +230,23 @@ contract StakingJB is Ownable, CrowdV {
         emit Stake(msg.sender, _token, _amount, block.timestamp);
     }
 
-    function getStaking (address _token) external view returns (uint256) {
-        return stakers[_token][msg.sender].amount ;
+    /**
+     * @notice Check amount of a stacked pool from msg.sender
+     * @param _token is address token of the pool to check
+     */
+    function getStaking(address _token) external view returns (uint256) {
+        return stakers[_token][msg.sender].amount;
+    }
+
+    /**
+     * @notice Check if msg.sender is a staker of a pool
+     * @dev Can be used to show the staked pools on the Dapp
+     * @param _token is address token of a pool
+     */
+    function isStaker(address _token) public view returns (bool) {
+        if (stakers[_token][msg.sender].amount > 0) {
+            return true;
+        }
+        return false;
     }
 }
