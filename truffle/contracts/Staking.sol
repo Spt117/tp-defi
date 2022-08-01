@@ -120,6 +120,30 @@ contract Staking is Ownable, CrowdV {
     }
 
     /**
+     * @notice Add more token to a staking pool
+     * @param _amount is the amount of token to add
+     * @param _token is address token of the pool
+     */
+    function addStake(uint256 _amount, address _token) external {
+        require(pools[_token].activePool, "This token isn't available.");
+        require(isStaker(_token), "You are not a staker");
+
+        bool result = IERC20(_token).transferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+        require(result, "Transfer from error");
+
+        stakers[_token][msg.sender].amount += _amount;
+        totalStakes[_token] += _amount;
+
+        claimRewards(_token);
+
+        emit Stake(msg.sender, _token, _amount, block.timestamp);
+    }
+
+    /**
      * @notice Withdraw fund into this contract
      * @param _token to unstake
      * @param _amount number of token to unstake
@@ -180,7 +204,7 @@ contract Staking is Ownable, CrowdV {
 
         uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
 
-        uint256 tokenPrice = getLatestPrice(pools[_token].addressPrice);
+        uint256 tokenPrice = 1; //getLatestPrice(pools[_token].addressPrice);
 
         uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
 
@@ -204,30 +228,6 @@ contract Staking is Ownable, CrowdV {
             priceTokenRewardInDollar;
         stakers[_token][msg.sender].date = block.timestamp; //Remettre à 0 le timestamp
         _mint(msg.sender, amoutToClaim);
-    }
-
-    /**
-     * @notice Add more token to a staking pool
-     * @param _amount is the amount of token to add
-     * @param _token is address token of the pool
-     */
-    function addStake(uint256 _amount, address _token) external {
-        require(pools[_token].activePool, "This token isn't available.");
-        require(isStaker(_token), "You are not a staker");
-
-        bool result = IERC20(_token).transferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-        require(result, "Transfer from error");
-
-        stakers[_token][msg.sender].amount += _amount;
-        totalStakes[_token] += _amount;
-
-        claimRewards(_token);
-
-        emit Stake(msg.sender, _token, _amount, block.timestamp);
     }
 
     /**
