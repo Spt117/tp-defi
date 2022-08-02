@@ -47,31 +47,29 @@ contract("Staking", function (accounts) {
         });
 
         it('Test on addPool() : twice same token', async function () {
-            let pools = await Stacking.pools.call(TokenTestAddress);
+            await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner})
+            // let pools = await Stacking.pools.call(TokenTestAddress);
             // console.log("pools.activePool ==> ", pools.activePool)
-            expect(pools.activePool).to.equal(false); // This pool/token doesn't already exist.
+            // await expect(pools.activePool).to.equal(false); // This pool/token doesn't already exist.
+            await expectRevert(Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner}), "This token already exist.")
         });
+
 
         it('Test on addPool() : test event', async function () {
             let receipt = await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner});
-            expectEvent(receipt, "NewPool", {tokenAddress: TokenTestAddress, APR: new BN(stakedAPR1)});
+            await expectEvent(receipt, "NewPool", {tokenAddress: TokenTestAddress, APR: new BN(stakedAPR1)});
         });
     })
 
 
     context("stopPool()", function() {
-
         it('Test on stopPool() : only Owner', async function () {
             await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner})
             await expectRevert(Stacking.stopPool(TokenTestAddress, {from: stacker1}), "Ownable: caller is not the owner")
         });
 
         it('Test on stopPool() : pool is active', async function () {
-            await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner})
-
-            let pools = await Stacking.pools.call(TokenTestAddress);
-            // console.log("pools.activePool ==> ", pools.activePool)
-            expect(pools.activePool).to.equal(true); // Pool is not active or doesn't exist.
+            await expectRevert(Stacking.stopPool(TokenTestAddress, {from: owner}), "Pool is not active or doesn't exist.")
         });
 
         it('Test on stopPool() : test event', async function () {
@@ -83,11 +81,11 @@ contract("Staking", function (accounts) {
             // console.log("blockNum ==> ", blockNum)
             // console.log("block ==> ", block)
             // console.log("block['timestamp'] ==> ", block['timestamp'])
-            expectEvent(receipt, "StopPool", {tokenAddress: TokenTestAddress, date: new BN(block['timestamp'])});
+            await expectEvent(receipt, "StopPool", {tokenAddress: TokenTestAddress, date: new BN(block['timestamp'])});
         });
     })
 
-    context("Stake", function() {
+    context("Stake()", function() {
         beforeEach(async function () {
             // let stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
             // console.log("stakerID_0A ==> ", stakerID_0)
@@ -110,7 +108,7 @@ contract("Staking", function (accounts) {
 
         it('Test on stacker1 : check availability of the token', async function () {
             let pools = await Stacking.pools.call(TokenTestAddress);
-            expect(pools.activePool).to.equal(true); // This token isn't available.
+            await expect(pools.activePool).to.equal(true); // This token isn't available.
         });
 
         // it('Test on stacker1 : TransferFrom', async function () { // @todo
@@ -129,11 +127,11 @@ contract("Staking", function (accounts) {
             // console.log("blockNum ==> ", blockNum)
             // console.log("block ==> ", block)
             // console.log("block['timestamp'] ==> ", block['timestamp'])
-            expectEvent(receipt, "Stake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
+            await expectEvent(receipt, "Stake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
         });
     })
 
-    context("addStake", function() {
+    context("addStake()", function() {
         beforeEach(async function () {
             // let stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
             // console.log("stakerID_0A ==> ", stakerID_0)
@@ -146,12 +144,13 @@ contract("Staking", function (accounts) {
         })
 
         it('Test on stacker1 : already staker', async function () {
-            await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
+            // await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
             await expectRevert(Stacking.addStake(stakedAmount1, TokenTestAddress, {from: otherAdress}), "You are not a staker")
         });
 
         it('Test on stacker1 : amount stacked = 0', async function () {
-            await expectRevert(Stacking.stake(stakedAmount0, TokenTestAddress, {from: stacker1}), "The amount must be greater than zero.")
+            await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
+            await expectRevert(Stacking.addStake(stakedAmount0, TokenTestAddress, {from: stacker1}), "The amount must be greater than zero.")
         });
 
         it('Test on stacker1 : check availability of the token', async function () {
@@ -161,6 +160,11 @@ contract("Staking", function (accounts) {
             let pools = await Stacking.pools.call(TokenTestAddress);
             expect(pools.activePool).to.equal(true); // This token isn't available.
         });
+
+        // it.only('Test on stacker1 : pool is active', async function () {
+        //     await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
+        //     await expectRevert(Stacking.addStake(stakedAmount1, otherAdress, {from: stacker1}), "Pool is not active or doesn't exist.")
+        // });
 
         // it('Test on stacker1 : TransferFrom', async function () { // @todo
         //     // let recipient = await Stacking.stake(stakedAmount0, TokenTestAddress, {from: stacker1}).call(); // ??? POSSIBLE DE LE RECUPERER ???
@@ -190,11 +194,11 @@ contract("Staking", function (accounts) {
             // console.log("blockNum ==> ", blockNum)
             // console.log("block ==> ", block)
             // console.log("block['timestamp'] ==> ", block['timestamp'])
-            expectEvent(receipt, "Stake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
+            await expectEvent(receipt, "Stake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
         });
     })
 
-    context("withdraw", function() {
+    context("withdraw()", function() {
         beforeEach(async function () {
             // let stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
             // console.log("stakerID_0A ==> ", stakerID_0)
@@ -217,7 +221,7 @@ contract("Staking", function (accounts) {
 
         it('Test on stacker1 : check availability of the token', async function () {
             let pools = await Stacking.pools.call(TokenTestAddress);
-            expect(pools.activePool).to.equal(true); // This token isn't available.
+            await expect(pools.activePool).to.equal(true); // This token isn't available.
         });
 
         // it('Test on stacker1 : TransferFrom', async function () { // @todo
@@ -236,7 +240,7 @@ contract("Staking", function (accounts) {
             // console.log("blockNum ==> ", blockNum)
             // console.log("block ==> ", block)
             // console.log("block['timestamp'] ==> ", block['timestamp'])
-            expectEvent(receipt, "Unstake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
+            await expectEvent(receipt, "Unstake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount1), date: new BN(block['timestamp'])});
         });
     })
 
@@ -250,7 +254,7 @@ contract("Staking", function (accounts) {
     //     });
     // })
 
-    context("calculateReward", function() {
+    context("calculateReward()", function() {
         beforeEach(async function () {
             // let stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
             // console.log("stakerID_0A ==> ", stakerID_0)
@@ -282,8 +286,39 @@ contract("Staking", function (accounts) {
         it('Test on calculateReward : get reward', async function () {
             // console.log("StackingAddress ==> ", StackingAddress)
             let receipt = await Stacking.calculateReward(TokenTestAddress, {from: stacker1});
-            console.log("receipt ==> ", receipt)
-            // expect(lastPrice.description).to.be.equal("proposalVoter1");
+            // console.log("receipt ==> ", receipt)
+            await expect(new BN(receipt)).to.be.bignumber.equal(new BN(0));
+        });
+    })
+
+    context("claimRewards()", function() {
+        it('Test on stacker1 : already staker', async function () {
+            await TokenTesting.transfer(stacker1, transferredAmount1, {from: ownerTokenTest});
+            // stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
+            // console.log("stakerID_0B ==> ", stakerID_0)
+            await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner});
+            await TokenTesting.approve(StackingAddress, approvedAmount1, {from: stacker1}); // l.136 dans https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
+            await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
+
+            await expectRevert(Stacking.claimRewards(TokenTestAddress, {from: otherAdress}), "You are not a staker")
+        });
+    })
+
+    context("getStaking()", function() {
+        it('Check amount of a stacked pool', async function () {
+            // let stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
+            // console.log("stakerID_0A ==> ", stakerID_0)
+            await TokenTesting.transfer(stacker1, transferredAmount1, {from: ownerTokenTest});
+            // stakerID_0 = await TokenTesting.balanceOf(stacker1, {from: stacker1});
+            // console.log("stakerID_0B ==> ", stakerID_0)
+
+            await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner});
+            await TokenTesting.approve(StackingAddress, approvedAmount1, {from: stacker1}); // l.136 dans https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
+            await Stacking.stake(stakedAmount1, TokenTestAddress, {from: stacker1})
+
+            let receipt = await Stacking.getStaking(TokenTestAddress , {from: stacker1});
+            // console.log("receipt ==> ", receipt)
+            await expect(new BN(receipt)).to.be.bignumber.equal(new BN(stakedAmount1));
         });
     })
 
