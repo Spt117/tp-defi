@@ -29,4 +29,4 @@ npm run dev
 https://www.youtube.com/watch?v=UcAmdV8eeKo
 
 ### Deploy Dapp
-https://tp-defi-77vsj5nn3-hidot48196-galotvcom.vercel.app/
+https://tp-defi.vercel.app/
