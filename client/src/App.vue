@@ -3,6 +3,7 @@
 	import ERC20Contract from "@/contracts/ERC20.json";
 
 	import getWeb3 from '@/utils/getWeb3'
+	import truncateEthAddress from 'truncate-eth-address'
 
 	import 'bootstrap-icons/font/bootstrap-icons.css'
 </script>
@@ -13,7 +14,7 @@
 			<p class="navbar-brand align-middle mb-0">Alyra - Staking Project</p>
 			<div class="d-flex text-light align-middle">
 				<p class="mb-0">
-					{{ connectedWallet }}
+					{{ connectedWalletTruncate }}
 					<span v-if="currentOwner">(Owner)</span>
 				</p>
 			</div>
@@ -119,6 +120,7 @@
 				accounts: false,
 				instance: false,
 				connectedWallet: false,
+				connectedWalletTruncate: false,
 				addressContract: false,
 				owner: false,
 				currentOwner: false,
@@ -138,12 +140,14 @@
 				this.web3 = await getWeb3()
 				this.accounts = await this.web3.eth.getAccounts()
 				this.connectedWallet = this.accounts[0]
+
+				this.connectedWalletTruncate = truncateEthAddress(this.accounts[0])
 				
 				const networkId = await this.web3.eth.net.getId()
 				const deployedNetwork = StakingContract.networks[networkId]
 				this.instance = await new this.web3.eth.Contract(StakingContract.abi, deployedNetwork && deployedNetwork.address)
 				this.addressContract = deployedNetwork.address
-				this.owner = await this.instance.methods.owner().call()
+				this.owner = await this.instance.methods.owner().call()				
 
 				this.checkCurrentIsOwner()
 			},
