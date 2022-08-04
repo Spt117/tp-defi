@@ -1,9 +1,9 @@
-# DEFI Staking
+# DEFI Staking Alyra
 
 ## Authors
-Jean Baptiste F.
-Anthony D. G.
-Etienen H.
+* Jean Baptiste F.
+* Anthony D. G.
+* Etienen H.
 
 ## Demo video Dapp
 https://www.youtube.com/watch?v=UcAmdV8eeKo
