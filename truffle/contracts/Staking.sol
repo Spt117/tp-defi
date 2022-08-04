@@ -12,9 +12,6 @@ import "./CrowdV.sol";
  */
 
 contract Staking is Ownable, CrowdV {
-    //Price of reward token in $
-    uint256 priceTokenRewardInDollar = 1;
-
     //Information about the token
     struct Token {
         bool activePool;
@@ -70,11 +67,9 @@ contract Staking is Ownable, CrowdV {
         uint128 _apr,
         address _addressPrice
     ) external onlyOwner {
-        require(!pools[_token].activePool, "Token already exist");
+        require(!pools[_token].activePool, "Pool active");
 
-        pools[_token].activePool = true;
-        pools[_token].APR = _apr;
-        pools[_token].addressPrice = _addressPrice;
+        pools[_token] = Token(true, _addressPrice, 0, _apr, 0);
 
         emit NewPool(_token, _apr);
     }
@@ -85,10 +80,7 @@ contract Staking is Ownable, CrowdV {
      * @param _token is token address
      */
     function stopPool(address _token) external onlyOwner {
-        require(
-            pools[_token].activePool,
-            "Pool not active"
-        );
+        require(pools[_token].activePool, "Pool not active");
         pools[_token].activePool = false;
         pools[_token].dateStop = block.timestamp;
 
@@ -103,7 +95,7 @@ contract Staking is Ownable, CrowdV {
      */
     function stake(uint128 _amount, address _token) external {
         require(_amount > 0, "Amount can't be zero");
-        require(pools[_token].activePool, "Unavailable Token");
+        require(pools[_token].activePool, "Pool not active");
 
         bool result = IERC20(_token).transferFrom(
             msg.sender,
@@ -112,8 +104,7 @@ contract Staking is Ownable, CrowdV {
         );
         require(result, "Transfer from error");
 
-        stakers[_token][msg.sender].amount += _amount;
-        stakers[_token][msg.sender].date = block.timestamp;
+        stakers[_token][msg.sender]= Staker(stakers[_token][msg.sender].amount + _amount, block.timestamp);
 
         majStackingPool memory maj = majStackingPool(
             block.timestamp,
@@ -136,16 +127,16 @@ contract Staking is Ownable, CrowdV {
     function withdraw(uint128 _amount, address _token) external {
         require(isStaker(_token), "Not a staker");
         require(_amount > 0, "Amount can't be zero");
-        require(_amount <= stakers[_token][msg.sender].amount, "Don't have so many tokens");
-        require(pools[_token].activePool, "Unavailable Token"); //pas sûr que ce soit nécessaire
+        require(
+            _amount <= stakers[_token][msg.sender].amount,
+            "Don't have so many tokens"
+        );
+        require(pools[_token].activePool, "Pool not active");
 
         bool result = IERC20(_token).transfer(msg.sender, _amount);
         require(result, "Transfer from error");
 
-        claimRewards(_token); // Récupérer les rewards en même temps
-
-        stakers[_token][msg.sender].amount -= _amount;
-        stakers[_token][msg.sender].date = block.timestamp;
+        stakers[_token][msg.sender]= Staker(stakers[_token][msg.sender].amount - _amount, block.timestamp);
 
         majStackingPool memory maj = majStackingPool(
             block.timestamp,
@@ -154,6 +145,8 @@ contract Staking is Ownable, CrowdV {
         stakingTimes[_token].push(maj);
 
         pools[_token].totalStakes -= _amount;
+
+        claimRewards(_token); // Récupérer les rewards en même temps
 
         emit Unstake(msg.sender, _token, _amount, block.timestamp);
     }
@@ -246,8 +239,9 @@ contract Staking is Ownable, CrowdV {
     function claimRewards(address _token) public {
         require(isStaker(_token), "Not a staker");
 
-        uint256 amoutToClaim = calculateReward(_token) /
-            priceTokenRewardInDollar;
+        uint256 priceReward = 1; //fixé pour le contrat
+
+        uint256 amoutToClaim = calculateReward(_token) / priceReward;
         stakers[_token][msg.sender].date = block.timestamp; //Remettre à 0 le timestamp
         _mint(msg.sender, amoutToClaim);
     }
