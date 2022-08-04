@@ -40,7 +40,7 @@ contract Staking is Ownable, CrowdV {
         uint256 blockDate;
         uint128 stakingTotalPool;
     }
-    mapping(address => majStackingPool[]) public stakingTimes;
+    mapping(address => majStackingPool[]) stakingTimes;
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
@@ -70,7 +70,7 @@ contract Staking is Ownable, CrowdV {
         uint128 _apr,
         address _addressPrice
     ) external onlyOwner {
-        require(!pools[_token].activePool, "This token already exist");
+        require(!pools[_token].activePool, "Token already exist");
 
         pools[_token].activePool = true;
         pools[_token].APR = _apr;
@@ -87,7 +87,7 @@ contract Staking is Ownable, CrowdV {
     function stopPool(address _token) external onlyOwner {
         require(
             pools[_token].activePool,
-            "Pool is not active"
+            "Pool not active"
         );
         pools[_token].activePool = false;
         pools[_token].dateStop = block.timestamp;
@@ -102,8 +102,8 @@ contract Staking is Ownable, CrowdV {
      * @dev Emit event after stake
      */
     function stake(uint128 _amount, address _token) external {
-        require(_amount > 0, "The amount must be greater than zero.");
-        require(pools[_token].activePool, "This token isn't available.");
+        require(_amount > 0, "Amount can't be zero");
+        require(pools[_token].activePool, "Unavailable Token");
 
         bool result = IERC20(_token).transferFrom(
             msg.sender,
@@ -134,10 +134,10 @@ contract Staking is Ownable, CrowdV {
      * @param _amount number of token to unstake
      */
     function withdraw(uint128 _amount, address _token) external {
-        require(isStaker(_token), "You are not a staker");
-        require(_amount > 0, "The amount must be greater than zero.");
-        require(_amount >= stakers[_token][msg.sender].amount, "You don't have this amount of token");
-        require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
+        require(isStaker(_token), "Not a staker");
+        require(_amount > 0, "Amount can't be zero");
+        require(_amount <= stakers[_token][msg.sender].amount, "Don't have so many tokens");
+        require(pools[_token].activePool, "Unavailable Token"); //pas sûr que ce soit nécessaire
 
         bool result = IERC20(_token).transfer(msg.sender, _amount);
         require(result, "Transfer from error");
@@ -182,7 +182,7 @@ contract Staking is Ownable, CrowdV {
      * @return rewards in dollars
      */
     function calculateReward(address _token) public view returns (uint256) {
-        require(isStaker(_token), "You are not a staker");
+        require(isStaker(_token), "Not a staker");
         uint256 tokenPrice = _getLatestPrice(pools[_token].addressPrice);
         uint256 aprPerSeconds = ((pools[_token].APR) * 10**8) /
             (365 * 24 * 3600);
@@ -244,7 +244,7 @@ contract Staking is Ownable, CrowdV {
      * @param _token is token of the pool to claim rewards
      */
     function claimRewards(address _token) public {
-        require(isStaker(_token), "You are not a staker");
+        require(isStaker(_token), "Not a staker");
 
         uint256 amoutToClaim = calculateReward(_token) /
             priceTokenRewardInDollar;
@@ -279,5 +279,4 @@ contract Staking is Ownable, CrowdV {
     function getTotalStaking(address _token) external view returns (uint256) {
         return pools[_token].totalStakes;
     }
-
 }
