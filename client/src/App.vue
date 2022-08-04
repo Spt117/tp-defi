@@ -329,9 +329,9 @@
 					this.pools[key].success = false
 
 					let fnName = 'stake'
-					if (this.pools[key].totalAccountStake > 0) {
+					/*if (this.pools[key].totalAccountStake > 0) {
 						fnName = 'addStake'
-					}
+					}*/
 
 					try {
 						await this.instance.methods[fnName](this.pools[key].amountStake, addressToken).send({ from: this.accounts[0] })
