@@ -166,6 +166,7 @@ contract Staking is Ownable, CrowdV {
     function withdraw(uint128 _amount, address _token) external {
         require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
+        require(_amount >= stakers[_token][msg.sender].amount, "You don't have this amount of token");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
 
         bool result = IERC20(_token).transfer(msg.sender, _amount);
