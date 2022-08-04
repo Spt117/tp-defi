@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "bootstrap-icons": "^1.9.1",
+    "truncate-eth-address": "^1.0.2",
     "vue": "^3.2.37",
     "web3": "^1.7.4"
   },
