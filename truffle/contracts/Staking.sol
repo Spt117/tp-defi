@@ -15,13 +15,6 @@ contract Staking is Ownable, CrowdV {
     //Price of reward token in $
     uint256 priceTokenRewardInDollar = 1;
 
-    //Statut of the contract
-    enum WorkflowStatus {
-        Enable,
-        Disable
-    }
-    WorkflowStatus public statut;
-
     //Information about the token
     struct Token {
         bool activePool;
@@ -64,18 +57,6 @@ contract Staking is Ownable, CrowdV {
         uint128 amount,
         uint256 date
     );
-
-    /**
-     * @notice Can disable all function of the contract if necessary
-     * @dev Available only for owner
-     */
-    function stopEmergency() external onlyOwner {
-        if (statut == WorkflowStatus.Enable) {
-            statut = WorkflowStatus(1);
-        } else {
-            statut = WorkflowStatus(0);
-        }
-    }
 
     /**
      * @notice Make available token address to add pool
@@ -121,7 +102,6 @@ contract Staking is Ownable, CrowdV {
      * @dev Emit event after stake
      */
     function stake(uint128 _amount, address _token) external {
-        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(!isStaker(_token), "You already stake this pool"); //msg.sender is already a staker, faire une boucle sur le tableau ?
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
@@ -152,7 +132,6 @@ contract Staking is Ownable, CrowdV {
      * @param _token is address token of the pool
      */
     function addStake(uint128 _amount, address _token) external {
-        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
@@ -185,7 +164,6 @@ contract Staking is Ownable, CrowdV {
      * @param _amount number of token to unstake
      */
     function withdraw(uint128 _amount, address _token) external {
-        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
@@ -294,7 +272,6 @@ contract Staking is Ownable, CrowdV {
      * @param _token is token of the pool to claim rewards
      */
     function claimRewards(address _token) public {
-        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
 
         uint256 amoutToClaim = calculateReward(_token) /
