@@ -28318,6 +28318,12 @@
       "address": "0x47115A5299CBCe8EFb0fA08A4C02A2C46F037Ec4",
       "transactionHash": "0x0dbf6a7d0d23f291a50c01a7b616812076ae8420da7f978275275e2e527d44e5"
     },
+    "42": {
+      "events": {},
+      "links": {},
+      "address": "0x527d1881d70Ef900EBdDD48d8ca43d61a65f959b",
+      "transactionHash": "0x776bddf8c4f6cd47fe933da753ff3f87ac7c739bc9731803dd81ebddf19a844e"
+    },
     "1659385803238": {
       "events": {},
       "links": {},
@@ -28684,7 +28690,7 @@
     }
   },
   "schemaVersion": "3.4.7",
-  "updatedAt": "2022-08-04T18:05:29.114Z",
+  "updatedAt": "2022-08-04T18:46:00.182Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Anthony - Etienne - Jean-Baptiste",
