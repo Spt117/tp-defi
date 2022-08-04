@@ -2,18 +2,39 @@
         require(isStaker(_token), "You are not a staker");
         uint rewardspartoOfPool;
         uint x = stakingTimes[_token].length;
+        uint blocks;
+        for (uint i =0; i < x ; i++) {
+            if(stakingTimes[_token][i].blockDate==stakers[_token][msg.sender].date) {
+                blocks = i;
+            }
+        }
+        
+        if (pools[_token].activePool) {
+
     if( x==1){
         rewardspartoOfPool += (block.timestamp - stakers[_token][msg.sender].date);
-        // *stakers[_token][msg.sender].amount / totalStakes[_token];
         }
 
         else{
-            for(uint i =0; i < x-1 ; i++){
+            for(uint i =blocks; i < x-1 ; i++){
                 rewardspartoOfPool += (stakingTimes[_token][i+1].blockDate - stakingTimes[_token][i].blockDate)*stakers[_token][msg.sender].amount / stakingTimes[_token][i].stakingTotalPool;
             }
             rewardspartoOfPool += (block.timestamp - stakingTimes[_token][x-1].blockDate)*stakers[_token][msg.sender].amount / totalStakes[_token];            
         }
+  }
+  else{
+        if( x==1){
+        rewardspartoOfPool += (pools[_token].dateStop - stakers[_token][msg.sender].date);
+        }
 
+        else{
+            for(uint i =blocks; i < x-1 ; i++){
+                rewardspartoOfPool += (stakingTimes[_token][i+1].blockDate - stakingTimes[_token][i].blockDate)*stakers[_token][msg.sender].amount / stakingTimes[_token][i].stakingTotalPool;
+            }
+            rewardspartoOfPool += (pools[_token].dateStop - stakingTimes[_token][x-1].blockDate)*stakers[_token][msg.sender].amount / totalStakes[_token];            
+        }
+  
+  }
 
     return rewardspartoOfPool;
 

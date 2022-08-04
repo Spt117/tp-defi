@@ -8,13 +8,10 @@ import "./CrowdV.sol";
 
 /**
  * @title Staking : a Staking Plateform !
- *
  * @author Anthony - Etienne - Jean-Baptiste
- *
  */
 
 contract Staking is Ownable, CrowdV {
-
     //Price of reward token in $
     uint256 priceTokenRewardInDollar = 1;
 
@@ -29,31 +26,28 @@ contract Staking is Ownable, CrowdV {
     struct Token {
         bool activePool;
         address addressPrice; //Chainlink Pool
-        uint256 APR;
         uint256 dateStop;
+        uint128 APR;
+        uint128 totalStakes;
     }
 
     // Token address => active pool
     mapping(address => Token) public pools;
 
     struct Staker {
-        uint256 amount; // Amount token stake
+        uint128 amount; // Amount token stake
         uint256 date; // Date of stake start
     }
 
     // address token => address Staker => Informations Staker
     mapping(address => mapping(address => Staker)) stakers;
 
-    // Save total amount stake by token address
-    mapping(address => uint256) public totalStakes;
-    
     // Save total amount with timestamp
-        struct majStackingPool{
-        uint blockDate;
-        uint stakingTotalPool;
+    struct majStackingPool {
+        uint256 blockDate;
+        uint128 stakingTotalPool;
     }
-    mapping(address => majStackingPool[] ) public stakingTimes;
-
+    mapping(address => majStackingPool[]) public stakingTimes;
 
     // Events
     event NewPool(address tokenAddress, uint256 APR);
@@ -75,9 +69,12 @@ contract Staking is Ownable, CrowdV {
      * @notice Can disable all function of the contract if necessary
      * @dev Available only for owner
      */
-    function stopEmergency () external onlyOwner {
-        if(statut==WorkflowStatus.Enable){statut=WorkflowStatus(1);}
-        else{statut=WorkflowStatus(0);}
+    function stopEmergency() external onlyOwner {
+        if (statut == WorkflowStatus.Enable) {
+            statut = WorkflowStatus(1);
+        } else {
+            statut = WorkflowStatus(0);
+        }
     }
 
     /**
@@ -89,7 +86,7 @@ contract Staking is Ownable, CrowdV {
      */
     function addPool(
         address _token,
-        uint256 _apr,
+        uint128 _apr,
         address _addressPrice
     ) external onlyOwner {
         require(!pools[_token].activePool, "This token already exist.");
@@ -123,8 +120,8 @@ contract Staking is Ownable, CrowdV {
      * @param _token to stake
      * @dev Emit event after stake
      */
-    function stake(uint256 _amount, address _token) external {
-        require(statut==WorkflowStatus.Enable, "Statut is disable");
+    function stake(uint128 _amount, address _token) external {
+        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(!isStaker(_token), "You already stake this pool"); //msg.sender is already a staker, faire une boucle sur le tableau ?
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
@@ -138,10 +135,13 @@ contract Staking is Ownable, CrowdV {
 
         stakers[_token][msg.sender] = Staker(_amount, block.timestamp);
 
-        majStackingPool memory maj = majStackingPool(block.timestamp,totalStakes[_token] + _amount);
+        majStackingPool memory maj = majStackingPool(
+            block.timestamp,
+            pools[_token].totalStakes + _amount
+        );
         stakingTimes[_token].push(maj);
 
-        totalStakes[_token] += _amount;
+        pools[_token].totalStakes += _amount;
 
         emit Stake(msg.sender, _token, _amount, block.timestamp);
     }
@@ -151,8 +151,8 @@ contract Staking is Ownable, CrowdV {
      * @param _amount is the amount of token to add
      * @param _token is address token of the pool
      */
-    function addStake(uint256 _amount, address _token) external {
-        require(statut==WorkflowStatus.Enable, "Statut is disable");
+    function addStake(uint128 _amount, address _token) external {
+        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
@@ -166,10 +166,13 @@ contract Staking is Ownable, CrowdV {
 
         stakers[_token][msg.sender].amount += _amount;
 
-        majStackingPool memory maj = majStackingPool(block.timestamp,totalStakes[_token] + _amount);
+        majStackingPool memory maj = majStackingPool(
+            block.timestamp,
+            pools[_token].totalStakes + _amount
+        );
         stakingTimes[_token].push(maj);
 
-        totalStakes[_token] += _amount;
+        pools[_token].totalStakes += _amount;
 
         claimRewards(_token);
 
@@ -181,8 +184,8 @@ contract Staking is Ownable, CrowdV {
      * @param _token to unstake
      * @param _amount number of token to unstake
      */
-    function withdraw(uint256 _amount, address _token) external {
-        require(statut==WorkflowStatus.Enable, "Statut is disable");
+    function withdraw(uint128 _amount, address _token) external {
+        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available."); //pas sûr que ce soit nécessaire
@@ -194,10 +197,13 @@ contract Staking is Ownable, CrowdV {
 
         stakers[_token][msg.sender].amount -= _amount;
 
-        majStackingPool memory maj = majStackingPool(block.timestamp,totalStakes[_token] - _amount);
+        majStackingPool memory maj = majStackingPool(
+            block.timestamp,
+            pools[_token].totalStakes - _amount
+        );
         stakingTimes[_token].push(maj);
 
-        totalStakes[_token] -= _amount;
+        pools[_token].totalStakes -= _amount;
 
         emit Unstake(msg.sender, _token, _amount, block.timestamp);
     }
@@ -214,14 +220,7 @@ contract Staking is Ownable, CrowdV {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             _pairChainlinkAddress
         );
-        (
-            ,
-            /*uint80 roundID*/
-            int256 price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
-            ,
-            ,
-
-        ) = priceFeed.latestRoundData();
+        (, int256 price, , , ) = priceFeed.latestRoundData();
 
         return uint256(price);
     }
@@ -230,27 +229,63 @@ contract Staking is Ownable, CrowdV {
      * @notice Calculate rewards
      * @dev tokenPrice use Chainlink Oracle
      * @param _token is the token of pool to calculate rewards
+     * @return rewards in dollars
      */
     function calculateReward(address _token) public view returns (uint256) {
         require(isStaker(_token), "You are not a staker");
-
-        uint256 rewardsperseconds = ((pools[_token].APR) * 10**8) / (365 * 24 * 3600);
-
-        uint256 rewardsperstakers = (stakers[_token][msg.sender].amount * 100) /
-            totalStakes[_token];
-
-        uint256 rewardsearnedperseconds = rewardsperseconds * rewardsperstakers;
-
-        uint256 tokenPrice = 1; //getLatestPrice(pools[_token].addressPrice);
-
-        uint256 rewardsInDollar = tokenPrice * rewardsearnedperseconds;
+        uint256 tokenPrice = 1; // getLatestPrice(pools[_token].addressPrice);
+        uint256 aprPerSeconds = ((pools[_token].APR) * 10**8) /
+            (365 * 24 * 3600);
+        uint256 rewardspartoOfPool;
+        uint256 x = stakingTimes[_token].length;
+        uint256 blockIndex;
+        for (uint256 i = 0; i < x; i++) {
+            if (
+                stakingTimes[_token][i].blockDate ==
+                stakers[_token][msg.sender].date
+            ) {
+                blockIndex = i;
+            }
+        }
 
         if (pools[_token].activePool) {
-            return ((block.timestamp - stakers[_token][msg.sender].date) *
-                rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+            if (x == 1) {
+                rewardspartoOfPool += (block.timestamp -
+                    stakers[_token][msg.sender].date);
+            } else {
+                for (uint256 i = blockIndex; i < x - 1; i++) {
+                    rewardspartoOfPool +=
+                        ((stakingTimes[_token][i + 1].blockDate -
+                            stakingTimes[_token][i].blockDate) *
+                            stakers[_token][msg.sender].amount) /
+                        stakingTimes[_token][i].stakingTotalPool;
+                }
+                rewardspartoOfPool +=
+                    ((block.timestamp - stakingTimes[_token][x - 1].blockDate) *
+                        stakers[_token][msg.sender].amount) /
+                    pools[_token].totalStakes;
+            }
+        } else {
+            if (x == 1) {
+                rewardspartoOfPool += (pools[_token].dateStop -
+                    stakers[_token][msg.sender].date);
+            } else {
+                for (uint256 i = blockIndex; i < x - 1; i++) {
+                    rewardspartoOfPool +=
+                        ((stakingTimes[_token][i + 1].blockDate -
+                            stakingTimes[_token][i].blockDate) *
+                            stakers[_token][msg.sender].amount) /
+                        stakingTimes[_token][i].stakingTotalPool;
+                }
+                rewardspartoOfPool +=
+                    ((pools[_token].dateStop -
+                        stakingTimes[_token][x - 1].blockDate) *
+                        stakers[_token][msg.sender].amount) /
+                    pools[_token].totalStakes;
+            }
         }
-        return ((pools[_token].dateStop - stakers[_token][msg.sender].date) *
-            rewardsInDollar); // il faudra prendre en compte le 10**8 et le 10**X de Chainlink
+
+        return rewardspartoOfPool * tokenPrice * aprPerSeconds;
     }
 
     /**
@@ -259,7 +294,7 @@ contract Staking is Ownable, CrowdV {
      * @param _token is token of the pool to claim rewards
      */
     function claimRewards(address _token) public {
-        require(statut==WorkflowStatus.Enable, "Statut is disable");
+        require(statut == WorkflowStatus.Enable, "Statut is disable");
         require(isStaker(_token), "You are not a staker");
 
         uint256 amoutToClaim = calculateReward(_token) /
