@@ -4,10 +4,23 @@
 * Jean Baptiste F.
 * Anthony D. G.
 * Etienne H.
----
+
+## Config
+To use local blockchain create a file .env and:
+```bash
+ganache
+```
+
+## Tests
+To call test on the Smart Contract:
+```bash
+cd truffle
+truffle test
+```
+
 ## Dapp
 ### Local server
-To use DAPP in local use
+To use DAPP in local:
 ```bash
 cd client
 npm run dev
