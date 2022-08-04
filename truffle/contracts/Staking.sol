@@ -25,7 +25,7 @@ contract Staking is Ownable, CrowdV {
     }
 
     // Token address => active pool
-    mapping(address => Token) public pools;
+    mapping(address => Token) pools;
 
     struct Staker {
         uint128 amount; // Amount token stake
@@ -300,4 +300,13 @@ contract Staking is Ownable, CrowdV {
         }
         return false;
     }
+
+    /**
+     * @notice Check total amount of a stacked pool
+     * @param _token is address token
+     */
+    function getTotalStaking(address _token) external view returns (uint256) {
+        return pools[_token].totalStakes;
+    }
+
 }
