@@ -14,7 +14,9 @@
 			<p class="navbar-brand align-middle mb-0">Alyra - Staking Project</p>
 			<div class="d-flex text-light align-middle">
 				<p class="mb-0">
-					{{ connectedWalletTruncate }}
+					<span v-if="connectedWalletTruncate">{{ connectedWalletTruncate }}</span>
+					<span v-else>Connect a wallet</span>
+					
 					<span v-if="currentOwner">(Owner)</span>
 				</p>
 			</div>
