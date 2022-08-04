@@ -70,7 +70,7 @@ contract Staking is Ownable, CrowdV {
         uint128 _apr,
         address _addressPrice
     ) external onlyOwner {
-        require(!pools[_token].activePool, "This token already exist.");
+        require(!pools[_token].activePool, "This token already exist");
 
         pools[_token].activePool = true;
         pools[_token].APR = _apr;
@@ -87,7 +87,7 @@ contract Staking is Ownable, CrowdV {
     function stopPool(address _token) external onlyOwner {
         require(
             pools[_token].activePool,
-            "Pool is not active or doesn't exist."
+            "Pool is not active"
         );
         pools[_token].activePool = false;
         pools[_token].dateStop = block.timestamp;
@@ -102,37 +102,6 @@ contract Staking is Ownable, CrowdV {
      * @dev Emit event after stake
      */
     function stake(uint128 _amount, address _token) external {
-        require(!isStaker(_token), "You already stake this pool"); //msg.sender is already a staker, faire une boucle sur le tableau ?
-        require(_amount > 0, "The amount must be greater than zero.");
-        require(pools[_token].activePool, "This token isn't available.");
-
-        bool result = IERC20(_token).transferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-        require(result, "Transfer from error");
-
-        stakers[_token][msg.sender] = Staker(_amount, block.timestamp);
-
-        majStackingPool memory maj = majStackingPool(
-            block.timestamp,
-            pools[_token].totalStakes + _amount
-        );
-        stakingTimes[_token].push(maj);
-
-        pools[_token].totalStakes += _amount;
-
-        emit Stake(msg.sender, _token, _amount, block.timestamp);
-    }
-
-    /**
-     * @notice Add more token to a staking pool
-     * @param _amount is the amount of token to add
-     * @param _token is address token of the pool
-     */
-    function addStake(uint128 _amount, address _token) external {
-        require(isStaker(_token), "You are not a staker");
         require(_amount > 0, "The amount must be greater than zero.");
         require(pools[_token].activePool, "This token isn't available.");
 
@@ -144,6 +113,7 @@ contract Staking is Ownable, CrowdV {
         require(result, "Transfer from error");
 
         stakers[_token][msg.sender].amount += _amount;
+        stakers[_token][msg.sender].date = block.timestamp;
 
         majStackingPool memory maj = majStackingPool(
             block.timestamp,
@@ -153,9 +123,9 @@ contract Staking is Ownable, CrowdV {
 
         pools[_token].totalStakes += _amount;
 
-        claimRewards(_token);
-
         emit Stake(msg.sender, _token, _amount, block.timestamp);
+
+        claimRewards(_token); // Récupérer les rewards en même temps
     }
 
     /**
@@ -175,6 +145,7 @@ contract Staking is Ownable, CrowdV {
         claimRewards(_token); // Récupérer les rewards en même temps
 
         stakers[_token][msg.sender].amount -= _amount;
+        stakers[_token][msg.sender].date = block.timestamp;
 
         majStackingPool memory maj = majStackingPool(
             block.timestamp,
