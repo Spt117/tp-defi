@@ -21,7 +21,7 @@ contract("Staking", function (accounts) {
         Stacking,
         StackingAddress; // StackingAddress = adresse du contrat de staking.
 
-    describe('Light beforeEach', function () {
+    describe.only('Light beforeEach', function () {
         beforeEach(async function () {
             TokenTesting = await TokenTestInstance.new({from: ownerTokenTest});
             TokenTestAddress = TokenTesting.address;
@@ -45,7 +45,7 @@ contract("Staking", function (accounts) {
             });
         })
 
-        context("stopPool()", function() {
+        context.only("stopPool()", function() {
             it('Test on stopPool() : only Owner', async function () {
                 await Stacking.addPool(TokenTestAddress, stakedAPR1, Chainlink1, {from: owner})
                 await expectRevert(Stacking.stopPool(TokenTestAddress, {from: stacker1}), "Ownable: caller is not the owner")
