@@ -29,7 +29,7 @@
 			</button>
 		</div>
 
-		<div id="all-pools" class="mb-5 bg-white p-3 shadow-sm" v-if="currentOwner" v-show="displayAddPoolForm">
+		<div id="all-pools" class="mb-5 bg-white p-3 shadow-sm rounded" v-if="currentOwner" v-show="displayAddPoolForm">
 			<div class="form-group">
 				<div class="form-group mb-3">
 					<label for="token" class="form-label fw-bold">Token address:</label>
@@ -60,7 +60,7 @@
 		</div>
 
 		<div id="pools" class="mt-5" v-if="Object.keys(pools).length">
-			<h2>Pools availables</h2>
+			<h2 class="text-white">Pools availables</h2>
 			<div class="row mt-4">
 				<div class="col-4 d-flex mb-4 align-items-stretch" v-for="(pool, key) in pools">
 					<div class="card w-100 shadow-sm border-0">
@@ -220,10 +220,9 @@
 			 * Prepare revert message
 			 */
 			parseRevertMsg (revert) {
-				return error
-				/*revert = revert.message.split('Internal JSON-RPC error.')[1].trim()
+				revert = revert.message.split('Internal JSON-RPC error.')[1].trim()
 				revert = JSON.parse(revert)
-				return revert.message.split('revert ')[1]*/
+				return revert.message.split('revert ')[1]
 			},
 
 			/**
@@ -254,6 +253,7 @@
 						success: false,
 						rewards: 0
 					}
+
 					
 					if (this.pools[i].totalAccountStake > 0) {
 						this.rewards(i)
@@ -274,7 +274,7 @@
 			 * Get Staking total  by pool
 			 */
 			async getStakingTotal (addressToken) {
-				return await this.instance.methods.totalStakes(addressToken).call({ from: this.accounts[0] })
+				return await this.instance.methods.getTotalStaking(addressToken).call({ from: this.accounts[0] })
 			},
 
 			/**
@@ -306,7 +306,6 @@
 					}
 				}
 			},
-
 
 			/**
 			 * Event stake
