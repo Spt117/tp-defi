@@ -115,7 +115,6 @@ contract Staking is Ownable, CrowdV, StackingPool {
             _amount <= stakers[_token][msg.sender].amount,
             "Don't have so many tokens"
         );
-        require(pools[_token].activePool, "Pool not active");
         uint256 rewards = calculateReward(_token);
         bool result = IERC20(_token).transfer(msg.sender, _amount);
         require(result, "Transfer from error");
@@ -129,24 +128,6 @@ contract Staking is Ownable, CrowdV, StackingPool {
         emit Unstake(msg.sender, _token, _amount, block.timestamp);
     }
 
-
-    /**
-     * @notice Get price of token with Chainlink
-     * @param _pairChainlinkAddress is the pool adress in $
-     */
-    function _getLatestPrice(address _pairChainlinkAddress)
-        private
-        view
-        returns (uint256)
-    {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _pairChainlinkAddress
-        );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
-
-        return uint256(price);
-    }
-
     /**
      * @notice Calculate rewards
      * @dev tokenPrice use Chainlink Oracle
@@ -154,7 +135,7 @@ contract Staking is Ownable, CrowdV, StackingPool {
      * @return rewards in dollars
      */
     function calculateReward(address _token) public view returns (uint256) {
-        // require(isStaker(_token), "Not a staker");
+        require(isStaker(_token), "Not a staker");
         uint256 priceCRVD = 1; //prix du token de reward fixé pour l'exercice
         uint256 tokenPrice = 1; //_getLatestPrice(pools[_token].addressPrice);
         uint256 aprPerSeconds = ((pools[_token].APR) * 10**8) /
