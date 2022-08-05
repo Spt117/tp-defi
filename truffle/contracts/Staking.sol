@@ -127,6 +127,23 @@ contract Staking is Ownable, CrowdV, StackingPool {
 
         emit Unstake(msg.sender, _token, _amount, block.timestamp);
     }
+    
+    /**
+     * @notice Get price of token with Chainlink
+     * @param _pairChainlinkAddress is the pool adress in $
+     */
+    function _getLatestPrice(address _pairChainlinkAddress)
+        private
+        view
+        returns (uint256)
+    {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            _pairChainlinkAddress
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+
+        return uint256(price);
+    }
 
     /**
      * @notice Calculate rewards
@@ -137,7 +154,7 @@ contract Staking is Ownable, CrowdV, StackingPool {
     function calculateReward(address _token) public view returns (uint256) {
         require(isStaker(_token), "Not a staker");
         uint256 priceCRVD = 1; //prix du token de reward fixé pour l'exercice
-        uint256 tokenPrice = 1; //_getLatestPrice(pools[_token].addressPrice);
+        uint256 tokenPrice = _getLatestPrice(pools[_token].addressPrice);
         uint256 aprPerSeconds = ((pools[_token].APR) * 10**8) /
             (365 * 24 * 3600);
         uint256 rewardspartoOfPool;
