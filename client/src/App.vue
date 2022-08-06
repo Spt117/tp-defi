@@ -361,11 +361,11 @@
 				} else {
 					this.pools[key].amountUnstakeError = false
 					try {
-						await this.instance.methods.withdraw( addressToken, this.pools[key].amountUnstake,).send({ from: this.accounts[0] })
+						await this.instance.methods.withdraw(this.pools[key].amountUnstake, addressToken).send({ from: this.accounts[0] })
 						this.pools[key].amountUnstake = null
 						this.pools[key].success = 'Unstake has been successed.'
 					} catch (error) {
-						await this.instance.methods.withdraw(addressToken, this.pools[key].amountUnstake).call({ from: this.accounts[0] })
+						await this.instance.methods.withdraw(this.pools[key].amountUnstake, addressToken).call({ from: this.accounts[0] })
 						.then(result => {}).catch(revert => {
 							console.log(revert)
 							console.log(this.parseRevertMsg(revert))				
