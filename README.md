@@ -30,3 +30,6 @@ https://www.youtube.com/watch?v=UcAmdV8eeKo
 
 ### Deploy Dapp
 https://tp-defi.vercel.app/
+
+## Unit tests
+Please refer to the README file in the "/test" folder.
