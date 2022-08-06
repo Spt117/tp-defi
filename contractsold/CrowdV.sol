@@ -5,7 +5,7 @@ import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 /**
- * @title CrowdV : an ERC20 reward Token for Staking Plateform !
+ * @title CrowdV : an ERC20 reward Token for Staking Plateforme !
  *
  * @author Anthony - Etienne - Jean-Baptiste
  *
