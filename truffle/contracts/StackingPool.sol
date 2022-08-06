@@ -7,7 +7,7 @@ contract StackingPool {
         uint256 date; // Date of stake start
     }
     // address token => address Staker => Informations Staker
-    mapping(address => mapping(address => Staker)) public stakers;
+    mapping(address => mapping(address => Staker)) stakers;
 
     // Save total amount with timestamp
     struct majStackingPool {
