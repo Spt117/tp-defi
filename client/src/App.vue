@@ -292,26 +292,27 @@
 				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
 				await token.methods.approve(this.addressContract, 10000000000000).send({ from: this.accounts[0] })
 				this.pools[key].approve = true
-			},
-
-			async approveStakingContractEvent (addressToken, key) {
-				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
-				await token.methods.approve(this.addressContract, 10000000000000).send({ from: this.accounts[0] })
-				this.pools[key].approve = true
+				localStorage.setItem('approval' + key, true)
 			},
 
 			/**
 			 * Get event approve
 			 */
 			async getApproveEvent (addressToken, key) {
-				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
-				const approval = await token.getPastEvents('Approval', { fromBlock: 0 })
+				// const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
+				// const approval = await token.getPastEvents('Approval', { fromBlock: 0 })
+// 
+				// for (let i = 0; i < approval.length; i++) {
+				// 	if (approval[i].returnValues.owner == this.accounts[0]) {
+				// 		this.pools[key].approve = true
+				// 	}
+				// }
 
-				for (let i = 0; i < approval.length; i++) {
-					if (approval[i].returnValues.owner == this.accounts[0]) {
-						this.pools[key].approve = true
-					}
+				if (localStorage.getItem('approval'+key) != undefined) {
+					this.pools[key].approve = true
 				}
+
+				localStorage.setItem('approval' + key, true)
 			},
 
 			/**
