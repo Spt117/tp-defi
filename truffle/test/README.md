@@ -1,17 +1,21 @@
 
-# TP n°4 - DeFi Staking Alyra - Tests unitaires
+# TP n°4 - DeFi Staking Alyra - Unit testing
 
 ## Authors
 * Jean Baptiste F.
 * Etienne H.
 * Anthony D. G.
 
+## Video
+
+https://www.brainy-club.fr/Alyra-cpmd4dqwpfgh5wskz/
 
 ## Introduction
 
-Les tests unitaires portent sur les fichiers CrowdV.sol, StackingPool.sol, Staking.sol et TokenTest.sol.
+The unit tests concern the CrowdV.sol, StackingPool.sol, Staking.sol and TokenTest.sol files.
 
-Les tests ont été effectués avec eth-gas-reporter et coverage préalablement installés et paramétrés dans truffle-config.js.
+The tests were performed with "eth-gas-reporter" and "coverage" previously installed and configured in truffle-config.js.
+
 ```
 $ truffle test
 ```
@@ -19,11 +23,12 @@ $ truffle test
 $ truffle run coverage
 ```
 
-Plusieurs tests ont été effectués en faisant varier les valeurs des paramètres de l'optimizer dans truffle-config.js.
+Several tests were performed by varying the values of the "optimizer" parameters in truffle-config.js.
 
-L'objectif est de montrer que plus le nombre de cycles d'exécution de l'optimizer est faible, plus le contrat est léger et les fonctions plus coûteuses à appeler. Et inversement, plus le nombre de cycles de l'optimizer est important, plus le contrat est lourd et les fonctions moins coûteuses à appeler.
+The objective is to show the impacts of these variations.
+The results are as follow: lower the number of execution cycles of the "optimizer" is, lighter the contract is and more expensive the functions to call. And on the opposite, more the number of cycles of the "optimizer" is important, heavier the contract is and less expensive the functions to call.
 
-Voici un tableau résumant les résultats de la taille des fichiers en bytes et des coûts en gas en fonction du nombre d'exécution de l'optimizer :
+Here is a table summarizing the results of the file size in bytes and the costs in gas depending on the number of executions of the "optimizer":
 
 | Optimizer | File Size (1) | Eth-Gas (2) |
 |:---|:---:|---:|
@@ -39,8 +44,7 @@ Voici un tableau résumant les résultats de la taille des fichiers en bytes et 
 
 (2) in gas. Deployments > Staking.
 
-
-Vous trouverez ci-dessous les copies d'écran des différents tests exécutés.
+You will find below the screenshots of the different tests performed.
 
 ## Files
 
