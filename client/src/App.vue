@@ -77,7 +77,7 @@
 							</div>
 							<button class="btn-primary btn" @click="approveStakingContract(pool.token, key)" v-if="!pools[key].approve && pools[key].totalAccountStake == 0">
 								Approve the contract
-								<span v-show="loaderApproval" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+								<span v-show="loaderApproval[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
 							</button>
 
 							<div class="form-group mb-3 row" v-if="pools[key].approve">
@@ -132,7 +132,7 @@
 				pools: [],
 				displayAddPoolForm: false,
 				loaderAddPool: false,
-				loaderApproval: false, 
+				loaderApproval: [], 
 				notifAddPool: {type: false, message: false },
 				addPoolFields: {
 					token: { value: null, error : false },
@@ -293,11 +293,11 @@
 			 * Get appove staking
 			 */
 			async approveStakingContract (addressToken, key) {
-				this.loaderApproval = true
+				this.loaderApproval[key] = true
 				const token = await new this.web3.eth.Contract(ERC20Contract.abi, addressToken)
 				await token.methods.approve(this.addressContract, 10000000000000).send({ from: this.accounts[0] })
 				this.pools[key].approve = true
-				this.loaderApproval = false
+				this.loaderApproval[key] = false
 				localStorage.setItem('approval' + key + this.accounts[0], true)
 			},
 
