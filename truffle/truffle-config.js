@@ -35,7 +35,6 @@ mocha: {
     showTimeSpent: true,
    }
 },
-
 // Configure your compilers
 compilers: {
   solc: {
