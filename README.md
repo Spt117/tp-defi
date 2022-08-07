@@ -31,5 +31,8 @@ https://www.youtube.com/watch?v=UcAmdV8eeKo
 ### Deploy Dapp
 https://tp-defi.vercel.app/
 
+### Solidity Contract
+https://youtu.be/RMfeEVOWAQY
+
 ## Unit tests
 Please refer to the README file in the "/truffle/test" folder.

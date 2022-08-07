@@ -1,16 +1,16 @@
 {
   "contractName": "StackingPool",
   "abi": [],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.14+commit.80d49f37\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/StackingPool.sol\":\"StackingPool\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/StackingPool.sol\":{\"keccak256\":\"0xafea13f2da48fcffc73b469e7c9ca116341bb7994d3986136a9b594ff6b76108\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://35d4ee6c7d86a010406da7c04ad20b292d0e07eaa3a56b5141dba705bf9a8f54\",\"dweb:/ipfs/QmRNWXHxcdxWRCmezg3GWnL6qiNtuy6zJqbKqWKqsmQXCo\"]}},\"version\":1}",
-  "bytecode": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212201a365ce928b8302f8faa55cd6d066ac62b994a8c61dc2f80c5da9da5f113a42b64736f6c634300080e0033",
-  "deployedBytecode": "0x6080604052600080fdfea26469706673582212201a365ce928b8302f8faa55cd6d066ac62b994a8c61dc2f80c5da9da5f113a42b64736f6c634300080e0033",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.14+commit.80d49f37\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/StackingPool.sol\":\"StackingPool\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/StackingPool.sol\":{\"keccak256\":\"0xb44f15709f42e28fe6e459c72e8ba952d503b8b939d15de3cd4ea5985c4852ca\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://cc95e254da46260b78226edb0a7891afc8550f9ffbc03e31956ffc28d4dabd60\",\"dweb:/ipfs/QmYmAKt9BmRLMp1mdcUYe9CPXXR3ykDHFkfM2j1Ya8JBYo\"]}},\"version\":1}",
+  "bytecode": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea2646970667358221220125afcb8a1d1e45c298c603020512bcb372e9fd3f91c7b3675767b1af999e8cd64736f6c634300080e0033",
+  "deployedBytecode": "0x6080604052600080fdfea2646970667358221220125afcb8a1d1e45c298c603020512bcb372e9fd3f91c7b3675767b1af999e8cd64736f6c634300080e0033",
   "immutableReferences": {},
   "generatedSources": [],
   "deployedGeneratedSources": [],
-  "sourceMap": "60:2704:1:-:0;;;;;;;;;;;;;;;;;;;",
-  "deployedSourceMap": "60:2704:1:-:0;;;;;",
-  "source": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.14;\r\n\r\ncontract StackingPool {\r\n    struct Staker {\r\n        uint128 amount; // Amount token stake\r\n        uint256 date; // Date of stake start\r\n    }\r\n    // address token => address Staker => Informations Staker\r\n    mapping(address => mapping(address => Staker)) stakers;\r\n\r\n    // Save total amount with timestamp\r\n    struct majStackingPool {\r\n        uint256 blockDate;\r\n        uint128 stakingTotalPool;\r\n    }\r\n    //address token => array majStackingPool\r\n    mapping(address => majStackingPool[]) stakingTimes;\r\n\r\n    /**\r\n     * @notice Update Staker Struct when he stake\r\n     * @dev called in function stake\r\n     * @param _amount is the amount to stake\r\n     * @param _token is token address\r\n     */\r\n    function upAmountStaker(uint128 _amount, address _token) internal {\r\n        stakers[_token][msg.sender] = Staker(\r\n            stakers[_token][msg.sender].amount + _amount,\r\n            block.timestamp\r\n        );\r\n    }\r\n\r\n    /**\r\n     * @notice Update Staker Struct when he withdraw\r\n     * @dev called in function withdraw\r\n     * @param _amount is the amount to stake\r\n     * @param _token is token address\r\n     */\r\n    function downAmountStaker(uint128 _amount, address _token) internal {\r\n        stakers[_token][msg.sender] = Staker(\r\n            stakers[_token][msg.sender].amount - _amount,\r\n            block.timestamp\r\n        );\r\n    }\r\n\r\n    /**\r\n     * @notice Update majStackingPool when there is a stake\r\n     * @dev called in function stake\r\n     * @param _amount is the amount to stake\r\n     * @param _token is token address\r\n     */\r\n    function upStackingPool(uint128 _amount, address _token) internal {\r\n        uint128 lastTotalStake;\r\n        if (stakingTimes[_token].length == 0) {\r\n            lastTotalStake = 0;\r\n        } else {\r\n            lastTotalStake = stakingTimes[_token][\r\n                stakingTimes[_token].length - 1\r\n            ].stakingTotalPool;\r\n        }\r\n        majStackingPool memory maj = majStackingPool(\r\n            block.timestamp,\r\n            lastTotalStake + _amount\r\n        );\r\n        stakingTimes[_token].push(maj);\r\n    }\r\n\r\n    /**\r\n     * @notice Update majStackingPool when there is a withdraw\r\n     * @dev called in function withdrawF\r\n     * @param _amount is the amount to stake\r\n     * @param _token is token address\r\n     */\r\n    function downStackingPool(uint128 _amount, address _token) internal {\r\n        uint128 lastTotalStake = stakingTimes[_token][\r\n            stakingTimes[_token].length - 1\r\n        ].stakingTotalPool;\r\n        majStackingPool memory maj = majStackingPool(\r\n            block.timestamp,\r\n            lastTotalStake - _amount\r\n        );\r\n        stakingTimes[_token].push(maj);\r\n    }\r\n}\r\n",
-  "sourcePath": "/home/etienne/workspace/tp-defi/truffle/contracts/StackingPool.sol",
+  "sourceMap": "57:2624:1:-:0;;;;;;;;;;;;;;;;;;;",
+  "deployedSourceMap": "57:2624:1:-:0;;;;;",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.14;\n\ncontract StackingPool {\n    struct Staker {\n        uint128 amount; // Amount token stake\n        uint256 date; // Date of stake start\n    }\n    // address token => address Staker => Informations Staker\n    mapping(address => mapping(address => Staker)) stakers;\n\n    // Save total amount with timestamp\n    struct majStackingPool {\n        uint256 blockDate;\n        uint128 stakingTotalPool;\n    }\n    //address token => array majStackingPool\n    mapping(address => majStackingPool[]) stakingTimes;\n\n    /**\n     * @notice Update Staker Struct when he stake\n     * @dev called in function stake\n     * @param _amount is the amount to stake\n     * @param _token is token address\n     */\n    function upAmountStaker(uint128 _amount, address _token) internal {\n        stakers[_token][msg.sender] = Staker(\n            stakers[_token][msg.sender].amount + _amount,\n            block.timestamp\n        );\n    }\n\n    /**\n     * @notice Update Staker Struct when he withdraw\n     * @dev called in function withdraw\n     * @param _amount is the amount to stake\n     * @param _token is token address\n     */\n    function downAmountStaker(uint128 _amount, address _token) internal {\n        stakers[_token][msg.sender] = Staker(\n            stakers[_token][msg.sender].amount - _amount,\n            block.timestamp\n        );\n    }\n\n    /**\n     * @notice Update majStackingPool when there is a stake\n     * @dev called in function stake\n     * @param _amount is the amount to stake\n     * @param _token is token address\n     */\n    function upStackingPool(uint128 _amount, address _token) internal {\n        uint128 lastTotalStake;\n        if (stakingTimes[_token].length == 0) {\n            lastTotalStake = 0;\n        } else {\n            lastTotalStake = stakingTimes[_token][\n                stakingTimes[_token].length - 1\n            ].stakingTotalPool;\n        }\n        majStackingPool memory maj = majStackingPool(\n            block.timestamp,\n            lastTotalStake + _amount\n        );\n        stakingTimes[_token].push(maj);\n    }\n\n    /**\n     * @notice Update majStackingPool when there is a withdraw\n     * @dev called in function withdrawF\n     * @param _amount is the amount to stake\n     * @param _token is token address\n     */\n    function downStackingPool(uint128 _amount, address _token) internal {\n        uint128 lastTotalStake = stakingTimes[_token][\n            stakingTimes[_token].length - 1\n        ].stakingTotalPool;\n        majStackingPool memory maj = majStackingPool(\n            block.timestamp,\n            lastTotalStake - _amount\n        );\n        stakingTimes[_token].push(maj);\n    }\n}\n",
+  "sourcePath": "/home/jb/Projets/TP Defi/truffle/contracts/StackingPool.sol",
   "ast": {
     "absolutePath": "project:/contracts/StackingPool.sol",
     "exportedSymbols": {
@@ -30,7 +30,7 @@
           ".14"
         ],
         "nodeType": "PragmaDirective",
-        "src": "33:23:1"
+        "src": "32:23:1"
       },
       {
         "abstract": false,
@@ -44,7 +44,7 @@
           198
         ],
         "name": "StackingPool",
-        "nameLocation": "69:12:1",
+        "nameLocation": "66:12:1",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
@@ -56,10 +56,10 @@
                 "id": 18,
                 "mutability": "mutable",
                 "name": "amount",
-                "nameLocation": "122:6:1",
+                "nameLocation": "117:6:1",
                 "nodeType": "VariableDeclaration",
                 "scope": 21,
-                "src": "114:14:1",
+                "src": "109:14:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -70,7 +70,7 @@
                   "id": 17,
                   "name": "uint128",
                   "nodeType": "ElementaryTypeName",
-                  "src": "114:7:1",
+                  "src": "109:7:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint128",
                     "typeString": "uint128"
@@ -83,10 +83,10 @@
                 "id": 20,
                 "mutability": "mutable",
                 "name": "date",
-                "nameLocation": "169:4:1",
+                "nameLocation": "163:4:1",
                 "nodeType": "VariableDeclaration",
                 "scope": 21,
-                "src": "161:12:1",
+                "src": "155:12:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -97,7 +97,7 @@
                   "id": 19,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "161:7:1",
+                  "src": "155:7:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -107,10 +107,10 @@
               }
             ],
             "name": "Staker",
-            "nameLocation": "96:6:1",
+            "nameLocation": "92:6:1",
             "nodeType": "StructDefinition",
             "scope": 198,
-            "src": "89:115:1",
+            "src": "85:112:1",
             "visibility": "public"
           },
           {
@@ -118,10 +118,10 @@
             "id": 28,
             "mutability": "mutable",
             "name": "stakers",
-            "nameLocation": "320:7:1",
+            "nameLocation": "311:7:1",
             "nodeType": "VariableDeclaration",
             "scope": 198,
-            "src": "273:54:1",
+            "src": "264:54:1",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -134,14 +134,14 @@
                 "id": 22,
                 "name": "address",
                 "nodeType": "ElementaryTypeName",
-                "src": "281:7:1",
+                "src": "272:7:1",
                 "typeDescriptions": {
                   "typeIdentifier": "t_address",
                   "typeString": "address"
                 }
               },
               "nodeType": "Mapping",
-              "src": "273:46:1",
+              "src": "264:46:1",
               "typeDescriptions": {
                 "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$_$",
                 "typeString": "mapping(address => mapping(address => struct StackingPool.Staker))"
@@ -152,14 +152,14 @@
                   "id": 23,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "300:7:1",
+                  "src": "291:7:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
                     "typeString": "address"
                   }
                 },
                 "nodeType": "Mapping",
-                "src": "292:26:1",
+                "src": "283:26:1",
                 "typeDescriptions": {
                   "typeIdentifier": "t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$",
                   "typeString": "mapping(address => struct StackingPool.Staker)"
@@ -172,10 +172,10 @@
                     "name": "Staker",
                     "nodeType": "IdentifierPath",
                     "referencedDeclaration": 21,
-                    "src": "311:6:1"
+                    "src": "302:6:1"
                   },
                   "referencedDeclaration": 21,
-                  "src": "311:6:1",
+                  "src": "302:6:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_struct$_Staker_$21_storage_ptr",
                     "typeString": "struct StackingPool.Staker"
@@ -194,10 +194,10 @@
                 "id": 30,
                 "mutability": "mutable",
                 "name": "blockDate",
-                "nameLocation": "419:9:1",
+                "nameLocation": "406:9:1",
                 "nodeType": "VariableDeclaration",
                 "scope": 33,
-                "src": "411:17:1",
+                "src": "398:17:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -208,7 +208,7 @@
                   "id": 29,
                   "name": "uint256",
                   "nodeType": "ElementaryTypeName",
-                  "src": "411:7:1",
+                  "src": "398:7:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint256",
                     "typeString": "uint256"
@@ -221,10 +221,10 @@
                 "id": 32,
                 "mutability": "mutable",
                 "name": "stakingTotalPool",
-                "nameLocation": "447:16:1",
+                "nameLocation": "433:16:1",
                 "nodeType": "VariableDeclaration",
                 "scope": 33,
-                "src": "439:24:1",
+                "src": "425:24:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -235,7 +235,7 @@
                   "id": 31,
                   "name": "uint128",
                   "nodeType": "ElementaryTypeName",
-                  "src": "439:7:1",
+                  "src": "425:7:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_uint128",
                     "typeString": "uint128"
@@ -245,10 +245,10 @@
               }
             ],
             "name": "majStackingPool",
-            "nameLocation": "384:15:1",
+            "nameLocation": "372:15:1",
             "nodeType": "StructDefinition",
             "scope": 198,
-            "src": "377:94:1",
+            "src": "365:91:1",
             "visibility": "public"
           },
           {
@@ -256,10 +256,10 @@
             "id": 39,
             "mutability": "mutable",
             "name": "stakingTimes",
-            "nameLocation": "561:12:1",
+            "nameLocation": "544:12:1",
             "nodeType": "VariableDeclaration",
             "scope": 198,
-            "src": "523:50:1",
+            "src": "506:50:1",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -272,14 +272,14 @@
                 "id": 34,
                 "name": "address",
                 "nodeType": "ElementaryTypeName",
-                "src": "531:7:1",
+                "src": "514:7:1",
                 "typeDescriptions": {
                   "typeIdentifier": "t_address",
                   "typeString": "address"
                 }
               },
               "nodeType": "Mapping",
-              "src": "523:37:1",
+              "src": "506:37:1",
               "typeDescriptions": {
                 "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                 "typeString": "mapping(address => struct StackingPool.majStackingPool[])"
@@ -293,10 +293,10 @@
                     "name": "majStackingPool",
                     "nodeType": "IdentifierPath",
                     "referencedDeclaration": 33,
-                    "src": "542:15:1"
+                    "src": "525:15:1"
                   },
                   "referencedDeclaration": 33,
-                  "src": "542:15:1",
+                  "src": "525:15:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_struct$_majStackingPool_$33_storage_ptr",
                     "typeString": "struct StackingPool.majStackingPool"
@@ -304,7 +304,7 @@
                 },
                 "id": 37,
                 "nodeType": "ArrayTypeName",
-                "src": "542:17:1",
+                "src": "525:17:1",
                 "typeDescriptions": {
                   "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_ptr",
                   "typeString": "struct StackingPool.majStackingPool[]"
@@ -317,7 +317,7 @@
             "body": {
               "id": 68,
               "nodeType": "Block",
-              "src": "840:155:1",
+              "src": "815:150:1",
               "statements": [
                 {
                   "expression": {
@@ -334,7 +334,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 28,
-                          "src": "851:7:1",
+                          "src": "825:7:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$_$",
                             "typeString": "mapping(address => mapping(address => struct StackingPool.Staker storage ref))"
@@ -347,7 +347,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 44,
-                          "src": "859:6:1",
+                          "src": "833:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -358,7 +358,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "851:15:1",
+                        "src": "825:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$",
                           "typeString": "mapping(address => struct StackingPool.Staker storage ref)"
@@ -372,7 +372,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 4294967281,
-                          "src": "867:3:1",
+                          "src": "841:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
                             "typeString": "msg"
@@ -385,7 +385,7 @@
                         "lValueRequested": false,
                         "memberName": "sender",
                         "nodeType": "MemberAccess",
-                        "src": "867:10:1",
+                        "src": "841:10:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
                           "typeString": "address"
@@ -396,7 +396,7 @@
                       "isPure": false,
                       "lValueRequested": true,
                       "nodeType": "IndexAccess",
-                      "src": "851:27:1",
+                      "src": "825:27:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_struct$_Staker_$21_storage",
                         "typeString": "struct StackingPool.Staker storage ref"
@@ -425,7 +425,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 28,
-                                  "src": "902:7:1",
+                                  "src": "875:7:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$_$",
                                     "typeString": "mapping(address => mapping(address => struct StackingPool.Staker storage ref))"
@@ -438,7 +438,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 44,
-                                  "src": "910:6:1",
+                                  "src": "883:6:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
                                     "typeString": "address"
@@ -449,7 +449,7 @@
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "nodeType": "IndexAccess",
-                                "src": "902:15:1",
+                                "src": "875:15:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$",
                                   "typeString": "mapping(address => struct StackingPool.Staker storage ref)"
@@ -463,7 +463,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 4294967281,
-                                  "src": "918:3:1",
+                                  "src": "891:3:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_magic_message",
                                     "typeString": "msg"
@@ -476,7 +476,7 @@
                                 "lValueRequested": false,
                                 "memberName": "sender",
                                 "nodeType": "MemberAccess",
-                                "src": "918:10:1",
+                                "src": "891:10:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_address",
                                   "typeString": "address"
@@ -487,7 +487,7 @@
                               "isPure": false,
                               "lValueRequested": false,
                               "nodeType": "IndexAccess",
-                              "src": "902:27:1",
+                              "src": "875:27:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_struct$_Staker_$21_storage",
                                 "typeString": "struct StackingPool.Staker storage ref"
@@ -501,7 +501,7 @@
                             "memberName": "amount",
                             "nodeType": "MemberAccess",
                             "referencedDeclaration": 18,
-                            "src": "902:34:1",
+                            "src": "875:34:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
@@ -515,13 +515,13 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 42,
-                            "src": "939:7:1",
+                            "src": "912:7:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
                             }
                           },
-                          "src": "902:44:1",
+                          "src": "875:44:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -534,7 +534,7 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 4294967292,
-                            "src": "961:5:1",
+                            "src": "933:5:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_block",
                               "typeString": "block"
@@ -547,7 +547,7 @@
                           "lValueRequested": false,
                           "memberName": "timestamp",
                           "nodeType": "MemberAccess",
-                          "src": "961:15:1",
+                          "src": "933:15:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
@@ -570,7 +570,7 @@
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
                         "referencedDeclaration": 21,
-                        "src": "881:6:1",
+                        "src": "855:6:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_type$_t_struct$_Staker_$21_storage_ptr_$",
                           "typeString": "type(struct StackingPool.Staker storage pointer)"
@@ -584,14 +584,14 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "881:106:1",
+                      "src": "855:103:1",
                       "tryCall": false,
                       "typeDescriptions": {
                         "typeIdentifier": "t_struct$_Staker_$21_memory_ptr",
                         "typeString": "struct StackingPool.Staker memory"
                       }
                     },
-                    "src": "851:136:1",
+                    "src": "825:133:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_struct$_Staker_$21_storage",
                       "typeString": "struct StackingPool.Staker storage ref"
@@ -599,14 +599,14 @@
                   },
                   "id": 67,
                   "nodeType": "ExpressionStatement",
-                  "src": "851:136:1"
+                  "src": "825:133:1"
                 }
               ]
             },
             "documentation": {
               "id": 40,
               "nodeType": "StructuredDocumentation",
-              "src": "582:186:1",
+              "src": "563:181:1",
               "text": " @notice Update Staker Struct when he stake\n @dev called in function stake\n @param _amount is the amount to stake\n @param _token is token address"
             },
             "id": 69,
@@ -614,7 +614,7 @@
             "kind": "function",
             "modifiers": [],
             "name": "upAmountStaker",
-            "nameLocation": "783:14:1",
+            "nameLocation": "758:14:1",
             "nodeType": "FunctionDefinition",
             "parameters": {
               "id": 45,
@@ -625,10 +625,10 @@
                   "id": 42,
                   "mutability": "mutable",
                   "name": "_amount",
-                  "nameLocation": "806:7:1",
+                  "nameLocation": "781:7:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 69,
-                  "src": "798:15:1",
+                  "src": "773:15:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -639,7 +639,7 @@
                     "id": 41,
                     "name": "uint128",
                     "nodeType": "ElementaryTypeName",
-                    "src": "798:7:1",
+                    "src": "773:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint128",
                       "typeString": "uint128"
@@ -652,10 +652,10 @@
                   "id": 44,
                   "mutability": "mutable",
                   "name": "_token",
-                  "nameLocation": "823:6:1",
+                  "nameLocation": "798:6:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 69,
-                  "src": "815:14:1",
+                  "src": "790:14:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -666,7 +666,7 @@
                     "id": 43,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "815:7:1",
+                    "src": "790:7:1",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -676,16 +676,16 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "797:33:1"
+              "src": "772:33:1"
             },
             "returnParameters": {
               "id": 46,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "840:0:1"
+              "src": "815:0:1"
             },
             "scope": 198,
-            "src": "774:221:1",
+            "src": "749:216:1",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
@@ -694,7 +694,7 @@
             "body": {
               "id": 98,
               "nodeType": "Block",
-              "src": "1269:155:1",
+              "src": "1231:150:1",
               "statements": [
                 {
                   "expression": {
@@ -711,7 +711,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 28,
-                          "src": "1280:7:1",
+                          "src": "1241:7:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$_$",
                             "typeString": "mapping(address => mapping(address => struct StackingPool.Staker storage ref))"
@@ -724,7 +724,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 74,
-                          "src": "1288:6:1",
+                          "src": "1249:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -735,7 +735,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "1280:15:1",
+                        "src": "1241:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$",
                           "typeString": "mapping(address => struct StackingPool.Staker storage ref)"
@@ -749,7 +749,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 4294967281,
-                          "src": "1296:3:1",
+                          "src": "1257:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
                             "typeString": "msg"
@@ -762,7 +762,7 @@
                         "lValueRequested": false,
                         "memberName": "sender",
                         "nodeType": "MemberAccess",
-                        "src": "1296:10:1",
+                        "src": "1257:10:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
                           "typeString": "address"
@@ -773,7 +773,7 @@
                       "isPure": false,
                       "lValueRequested": true,
                       "nodeType": "IndexAccess",
-                      "src": "1280:27:1",
+                      "src": "1241:27:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_struct$_Staker_$21_storage",
                         "typeString": "struct StackingPool.Staker storage ref"
@@ -802,7 +802,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 28,
-                                  "src": "1331:7:1",
+                                  "src": "1291:7:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$_$",
                                     "typeString": "mapping(address => mapping(address => struct StackingPool.Staker storage ref))"
@@ -815,7 +815,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 74,
-                                  "src": "1339:6:1",
+                                  "src": "1299:6:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
                                     "typeString": "address"
@@ -826,7 +826,7 @@
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "nodeType": "IndexAccess",
-                                "src": "1331:15:1",
+                                "src": "1291:15:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_mapping$_t_address_$_t_struct$_Staker_$21_storage_$",
                                   "typeString": "mapping(address => struct StackingPool.Staker storage ref)"
@@ -840,7 +840,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 4294967281,
-                                  "src": "1347:3:1",
+                                  "src": "1307:3:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_magic_message",
                                     "typeString": "msg"
@@ -853,7 +853,7 @@
                                 "lValueRequested": false,
                                 "memberName": "sender",
                                 "nodeType": "MemberAccess",
-                                "src": "1347:10:1",
+                                "src": "1307:10:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_address",
                                   "typeString": "address"
@@ -864,7 +864,7 @@
                               "isPure": false,
                               "lValueRequested": false,
                               "nodeType": "IndexAccess",
-                              "src": "1331:27:1",
+                              "src": "1291:27:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_struct$_Staker_$21_storage",
                                 "typeString": "struct StackingPool.Staker storage ref"
@@ -878,7 +878,7 @@
                             "memberName": "amount",
                             "nodeType": "MemberAccess",
                             "referencedDeclaration": 18,
-                            "src": "1331:34:1",
+                            "src": "1291:34:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
@@ -892,13 +892,13 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 72,
-                            "src": "1368:7:1",
+                            "src": "1328:7:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
                             }
                           },
-                          "src": "1331:44:1",
+                          "src": "1291:44:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -911,7 +911,7 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 4294967292,
-                            "src": "1390:5:1",
+                            "src": "1349:5:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_block",
                               "typeString": "block"
@@ -924,7 +924,7 @@
                           "lValueRequested": false,
                           "memberName": "timestamp",
                           "nodeType": "MemberAccess",
-                          "src": "1390:15:1",
+                          "src": "1349:15:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
@@ -947,7 +947,7 @@
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
                         "referencedDeclaration": 21,
-                        "src": "1310:6:1",
+                        "src": "1271:6:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_type$_t_struct$_Staker_$21_storage_ptr_$",
                           "typeString": "type(struct StackingPool.Staker storage pointer)"
@@ -961,14 +961,14 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "1310:106:1",
+                      "src": "1271:103:1",
                       "tryCall": false,
                       "typeDescriptions": {
                         "typeIdentifier": "t_struct$_Staker_$21_memory_ptr",
                         "typeString": "struct StackingPool.Staker memory"
                       }
                     },
-                    "src": "1280:136:1",
+                    "src": "1241:133:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_struct$_Staker_$21_storage",
                       "typeString": "struct StackingPool.Staker storage ref"
@@ -976,14 +976,14 @@
                   },
                   "id": 97,
                   "nodeType": "ExpressionStatement",
-                  "src": "1280:136:1"
+                  "src": "1241:133:1"
                 }
               ]
             },
             "documentation": {
               "id": 70,
               "nodeType": "StructuredDocumentation",
-              "src": "1003:192:1",
+              "src": "971:187:1",
               "text": " @notice Update Staker Struct when he withdraw\n @dev called in function withdraw\n @param _amount is the amount to stake\n @param _token is token address"
             },
             "id": 99,
@@ -991,7 +991,7 @@
             "kind": "function",
             "modifiers": [],
             "name": "downAmountStaker",
-            "nameLocation": "1210:16:1",
+            "nameLocation": "1172:16:1",
             "nodeType": "FunctionDefinition",
             "parameters": {
               "id": 75,
@@ -1002,10 +1002,10 @@
                   "id": 72,
                   "mutability": "mutable",
                   "name": "_amount",
-                  "nameLocation": "1235:7:1",
+                  "nameLocation": "1197:7:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 99,
-                  "src": "1227:15:1",
+                  "src": "1189:15:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1016,7 +1016,7 @@
                     "id": 71,
                     "name": "uint128",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1227:7:1",
+                    "src": "1189:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint128",
                       "typeString": "uint128"
@@ -1029,10 +1029,10 @@
                   "id": 74,
                   "mutability": "mutable",
                   "name": "_token",
-                  "nameLocation": "1252:6:1",
+                  "nameLocation": "1214:6:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 99,
-                  "src": "1244:14:1",
+                  "src": "1206:14:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1043,7 +1043,7 @@
                     "id": 73,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1244:7:1",
+                    "src": "1206:7:1",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -1053,16 +1053,16 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "1226:33:1"
+              "src": "1188:33:1"
             },
             "returnParameters": {
               "id": 76,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1269:0:1"
+              "src": "1231:0:1"
             },
             "scope": 198,
-            "src": "1201:223:1",
+            "src": "1163:218:1",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
@@ -1071,7 +1071,7 @@
             "body": {
               "id": 155,
               "nodeType": "Block",
-              "src": "1700:462:1",
+              "src": "1649:448:1",
               "statements": [
                 {
                   "assignments": [
@@ -1083,10 +1083,10 @@
                       "id": 108,
                       "mutability": "mutable",
                       "name": "lastTotalStake",
-                      "nameLocation": "1719:14:1",
+                      "nameLocation": "1667:14:1",
                       "nodeType": "VariableDeclaration",
                       "scope": 155,
-                      "src": "1711:22:1",
+                      "src": "1659:22:1",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -1097,7 +1097,7 @@
                         "id": 107,
                         "name": "uint128",
                         "nodeType": "ElementaryTypeName",
-                        "src": "1711:7:1",
+                        "src": "1659:7:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint128",
                           "typeString": "uint128"
@@ -1108,7 +1108,7 @@
                   ],
                   "id": 109,
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "1711:22:1"
+                  "src": "1659:22:1"
                 },
                 {
                   "condition": {
@@ -1129,7 +1129,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 39,
-                          "src": "1748:12:1",
+                          "src": "1695:12:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1142,7 +1142,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 104,
-                          "src": "1761:6:1",
+                          "src": "1708:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -1153,7 +1153,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "1748:20:1",
+                        "src": "1695:20:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                           "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1166,7 +1166,7 @@
                       "lValueRequested": false,
                       "memberName": "length",
                       "nodeType": "MemberAccess",
-                      "src": "1748:27:1",
+                      "src": "1695:27:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
@@ -1183,14 +1183,14 @@
                       "kind": "number",
                       "lValueRequested": false,
                       "nodeType": "Literal",
-                      "src": "1779:1:1",
+                      "src": "1726:1:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_rational_0_by_1",
                         "typeString": "int_const 0"
                       },
                       "value": "0"
                     },
-                    "src": "1748:32:1",
+                    "src": "1695:32:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -1199,7 +1199,7 @@
                   "falseBody": {
                     "id": 135,
                     "nodeType": "Block",
-                    "src": "1833:146:1",
+                    "src": "1778:142:1",
                     "statements": [
                       {
                         "expression": {
@@ -1214,7 +1214,7 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 108,
-                            "src": "1848:14:1",
+                            "src": "1792:14:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
@@ -1231,7 +1231,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 39,
-                                  "src": "1865:12:1",
+                                  "src": "1809:12:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                                     "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1244,7 +1244,7 @@
                                   "nodeType": "Identifier",
                                   "overloadedDeclarations": [],
                                   "referencedDeclaration": 104,
-                                  "src": "1878:6:1",
+                                  "src": "1822:6:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_address",
                                     "typeString": "address"
@@ -1255,7 +1255,7 @@
                                 "isPure": false,
                                 "lValueRequested": false,
                                 "nodeType": "IndexAccess",
-                                "src": "1865:20:1",
+                                "src": "1809:20:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                                   "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1280,7 +1280,7 @@
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
                                       "referencedDeclaration": 39,
-                                      "src": "1904:12:1",
+                                      "src": "1847:12:1",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                                         "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1293,7 +1293,7 @@
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
                                       "referencedDeclaration": 104,
-                                      "src": "1917:6:1",
+                                      "src": "1860:6:1",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_address",
                                         "typeString": "address"
@@ -1304,7 +1304,7 @@
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "nodeType": "IndexAccess",
-                                    "src": "1904:20:1",
+                                    "src": "1847:20:1",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                                       "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1317,7 +1317,7 @@
                                   "lValueRequested": false,
                                   "memberName": "length",
                                   "nodeType": "MemberAccess",
-                                  "src": "1904:27:1",
+                                  "src": "1847:27:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_uint256",
                                     "typeString": "uint256"
@@ -1334,14 +1334,14 @@
                                   "kind": "number",
                                   "lValueRequested": false,
                                   "nodeType": "Literal",
-                                  "src": "1934:1:1",
+                                  "src": "1877:1:1",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_rational_1_by_1",
                                     "typeString": "int_const 1"
                                   },
                                   "value": "1"
                                 },
-                                "src": "1904:31:1",
+                                "src": "1847:31:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
                                   "typeString": "uint256"
@@ -1352,7 +1352,7 @@
                               "isPure": false,
                               "lValueRequested": false,
                               "nodeType": "IndexAccess",
-                              "src": "1865:85:1",
+                              "src": "1809:83:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_struct$_majStackingPool_$33_storage",
                                 "typeString": "struct StackingPool.majStackingPool storage ref"
@@ -1366,13 +1366,13 @@
                             "memberName": "stakingTotalPool",
                             "nodeType": "MemberAccess",
                             "referencedDeclaration": 32,
-                            "src": "1865:102:1",
+                            "src": "1809:100:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
                             }
                           },
-                          "src": "1848:119:1",
+                          "src": "1792:117:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -1380,17 +1380,17 @@
                         },
                         "id": 134,
                         "nodeType": "ExpressionStatement",
-                        "src": "1848:119:1"
+                        "src": "1792:117:1"
                       }
                     ]
                   },
                   "id": 136,
                   "nodeType": "IfStatement",
-                  "src": "1744:235:1",
+                  "src": "1691:229:1",
                   "trueBody": {
                     "id": 120,
                     "nodeType": "Block",
-                    "src": "1782:45:1",
+                    "src": "1729:43:1",
                     "statements": [
                       {
                         "expression": {
@@ -1405,7 +1405,7 @@
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
                             "referencedDeclaration": 108,
-                            "src": "1797:14:1",
+                            "src": "1743:14:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint128",
                               "typeString": "uint128"
@@ -1422,14 +1422,14 @@
                             "kind": "number",
                             "lValueRequested": false,
                             "nodeType": "Literal",
-                            "src": "1814:1:1",
+                            "src": "1760:1:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_rational_0_by_1",
                               "typeString": "int_const 0"
                             },
                             "value": "0"
                           },
-                          "src": "1797:18:1",
+                          "src": "1743:18:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -1437,7 +1437,7 @@
                         },
                         "id": 119,
                         "nodeType": "ExpressionStatement",
-                        "src": "1797:18:1"
+                        "src": "1743:18:1"
                       }
                     ]
                   }
@@ -1452,10 +1452,10 @@
                       "id": 139,
                       "mutability": "mutable",
                       "name": "maj",
-                      "nameLocation": "2012:3:1",
+                      "nameLocation": "1952:3:1",
                       "nodeType": "VariableDeclaration",
                       "scope": 155,
-                      "src": "1989:26:1",
+                      "src": "1929:26:1",
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
@@ -1470,10 +1470,10 @@
                           "name": "majStackingPool",
                           "nodeType": "IdentifierPath",
                           "referencedDeclaration": 33,
-                          "src": "1989:15:1"
+                          "src": "1929:15:1"
                         },
                         "referencedDeclaration": 33,
-                        "src": "1989:15:1",
+                        "src": "1929:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_struct$_majStackingPool_$33_storage_ptr",
                           "typeString": "struct StackingPool.majStackingPool"
@@ -1492,7 +1492,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 4294967292,
-                          "src": "2048:5:1",
+                          "src": "1987:5:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_block",
                             "typeString": "block"
@@ -1505,7 +1505,7 @@
                         "lValueRequested": false,
                         "memberName": "timestamp",
                         "nodeType": "MemberAccess",
-                        "src": "2048:15:1",
+                        "src": "1987:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -1527,7 +1527,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 108,
-                          "src": "2078:14:1",
+                          "src": "2016:14:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -1541,13 +1541,13 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 102,
-                          "src": "2095:7:1",
+                          "src": "2033:7:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
                           }
                         },
-                        "src": "2078:24:1",
+                        "src": "2016:24:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint128",
                           "typeString": "uint128"
@@ -1570,7 +1570,7 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 33,
-                      "src": "2018:15:1",
+                      "src": "1958:15:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_type$_t_struct$_majStackingPool_$33_storage_ptr_$",
                         "typeString": "type(struct StackingPool.majStackingPool storage pointer)"
@@ -1584,7 +1584,7 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "2018:95:1",
+                    "src": "1958:92:1",
                     "tryCall": false,
                     "typeDescriptions": {
                       "typeIdentifier": "t_struct$_majStackingPool_$33_memory_ptr",
@@ -1592,7 +1592,7 @@
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "1989:124:1"
+                  "src": "1929:121:1"
                 },
                 {
                   "expression": {
@@ -1603,7 +1603,7 @@
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
                         "referencedDeclaration": 139,
-                        "src": "2150:3:1",
+                        "src": "2086:3:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_struct$_majStackingPool_$33_memory_ptr",
                           "typeString": "struct StackingPool.majStackingPool memory"
@@ -1624,7 +1624,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 39,
-                          "src": "2124:12:1",
+                          "src": "2060:12:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1637,7 +1637,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 104,
-                          "src": "2137:6:1",
+                          "src": "2073:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -1648,7 +1648,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "2124:20:1",
+                        "src": "2060:20:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                           "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1661,7 +1661,7 @@
                       "lValueRequested": false,
                       "memberName": "push",
                       "nodeType": "MemberAccess",
-                      "src": "2124:25:1",
+                      "src": "2060:25:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_arraypush_nonpayable$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_ptr_$_t_struct$_majStackingPool_$33_storage_$returns$__$bound_to$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_ptr_$",
                         "typeString": "function (struct StackingPool.majStackingPool storage ref[] storage pointer,struct StackingPool.majStackingPool storage ref)"
@@ -1675,7 +1675,7 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "2124:30:1",
+                    "src": "2060:30:1",
                     "tryCall": false,
                     "typeDescriptions": {
                       "typeIdentifier": "t_tuple$__$",
@@ -1684,14 +1684,14 @@
                   },
                   "id": 154,
                   "nodeType": "ExpressionStatement",
-                  "src": "2124:30:1"
+                  "src": "2060:30:1"
                 }
               ]
             },
             "documentation": {
               "id": 100,
               "nodeType": "StructuredDocumentation",
-              "src": "1432:196:1",
+              "src": "1387:191:1",
               "text": " @notice Update majStackingPool when there is a stake\n @dev called in function stake\n @param _amount is the amount to stake\n @param _token is token address"
             },
             "id": 156,
@@ -1699,7 +1699,7 @@
             "kind": "function",
             "modifiers": [],
             "name": "upStackingPool",
-            "nameLocation": "1643:14:1",
+            "nameLocation": "1592:14:1",
             "nodeType": "FunctionDefinition",
             "parameters": {
               "id": 105,
@@ -1710,10 +1710,10 @@
                   "id": 102,
                   "mutability": "mutable",
                   "name": "_amount",
-                  "nameLocation": "1666:7:1",
+                  "nameLocation": "1615:7:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 156,
-                  "src": "1658:15:1",
+                  "src": "1607:15:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1724,7 +1724,7 @@
                     "id": 101,
                     "name": "uint128",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1658:7:1",
+                    "src": "1607:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint128",
                       "typeString": "uint128"
@@ -1737,10 +1737,10 @@
                   "id": 104,
                   "mutability": "mutable",
                   "name": "_token",
-                  "nameLocation": "1683:6:1",
+                  "nameLocation": "1632:6:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 156,
-                  "src": "1675:14:1",
+                  "src": "1624:14:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1751,7 +1751,7 @@
                     "id": 103,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "1675:7:1",
+                    "src": "1624:7:1",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -1761,16 +1761,16 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "1657:33:1"
+              "src": "1606:33:1"
             },
             "returnParameters": {
               "id": 106,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1700:0:1"
+              "src": "1649:0:1"
             },
             "scope": 198,
-            "src": "1634:528:1",
+            "src": "1583:514:1",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
@@ -1779,7 +1779,7 @@
             "body": {
               "id": 196,
               "nodeType": "Block",
-              "src": "2447:314:1",
+              "src": "2374:305:1",
               "statements": [
                 {
                   "assignments": [
@@ -1791,10 +1791,10 @@
                       "id": 165,
                       "mutability": "mutable",
                       "name": "lastTotalStake",
-                      "nameLocation": "2466:14:1",
+                      "nameLocation": "2392:14:1",
                       "nodeType": "VariableDeclaration",
                       "scope": 196,
-                      "src": "2458:22:1",
+                      "src": "2384:22:1",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -1805,7 +1805,7 @@
                         "id": 164,
                         "name": "uint128",
                         "nodeType": "ElementaryTypeName",
-                        "src": "2458:7:1",
+                        "src": "2384:7:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint128",
                           "typeString": "uint128"
@@ -1824,7 +1824,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 39,
-                          "src": "2483:12:1",
+                          "src": "2409:12:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1837,7 +1837,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 161,
-                          "src": "2496:6:1",
+                          "src": "2422:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -1848,7 +1848,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "2483:20:1",
+                        "src": "2409:20:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                           "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1873,7 +1873,7 @@
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
                               "referencedDeclaration": 39,
-                              "src": "2518:12:1",
+                              "src": "2443:12:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                                 "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -1886,7 +1886,7 @@
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
                               "referencedDeclaration": 161,
-                              "src": "2531:6:1",
+                              "src": "2456:6:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_address",
                                 "typeString": "address"
@@ -1897,7 +1897,7 @@
                             "isPure": false,
                             "lValueRequested": false,
                             "nodeType": "IndexAccess",
-                            "src": "2518:20:1",
+                            "src": "2443:20:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                               "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -1910,7 +1910,7 @@
                           "lValueRequested": false,
                           "memberName": "length",
                           "nodeType": "MemberAccess",
-                          "src": "2518:27:1",
+                          "src": "2443:27:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
@@ -1927,14 +1927,14 @@
                           "kind": "number",
                           "lValueRequested": false,
                           "nodeType": "Literal",
-                          "src": "2548:1:1",
+                          "src": "2473:1:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_rational_1_by_1",
                             "typeString": "int_const 1"
                           },
                           "value": "1"
                         },
-                        "src": "2518:31:1",
+                        "src": "2443:31:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -1945,7 +1945,7 @@
                       "isPure": false,
                       "lValueRequested": false,
                       "nodeType": "IndexAccess",
-                      "src": "2483:77:1",
+                      "src": "2409:75:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_struct$_majStackingPool_$33_storage",
                         "typeString": "struct StackingPool.majStackingPool storage ref"
@@ -1959,14 +1959,14 @@
                     "memberName": "stakingTotalPool",
                     "nodeType": "MemberAccess",
                     "referencedDeclaration": 32,
-                    "src": "2483:94:1",
+                    "src": "2409:92:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint128",
                       "typeString": "uint128"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "2458:119:1"
+                  "src": "2384:117:1"
                 },
                 {
                   "assignments": [
@@ -1978,10 +1978,10 @@
                       "id": 180,
                       "mutability": "mutable",
                       "name": "maj",
-                      "nameLocation": "2611:3:1",
+                      "nameLocation": "2534:3:1",
                       "nodeType": "VariableDeclaration",
                       "scope": 196,
-                      "src": "2588:26:1",
+                      "src": "2511:26:1",
                       "stateVariable": false,
                       "storageLocation": "memory",
                       "typeDescriptions": {
@@ -1996,10 +1996,10 @@
                           "name": "majStackingPool",
                           "nodeType": "IdentifierPath",
                           "referencedDeclaration": 33,
-                          "src": "2588:15:1"
+                          "src": "2511:15:1"
                         },
                         "referencedDeclaration": 33,
-                        "src": "2588:15:1",
+                        "src": "2511:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_struct$_majStackingPool_$33_storage_ptr",
                           "typeString": "struct StackingPool.majStackingPool"
@@ -2018,7 +2018,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 4294967292,
-                          "src": "2647:5:1",
+                          "src": "2569:5:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_block",
                             "typeString": "block"
@@ -2031,7 +2031,7 @@
                         "lValueRequested": false,
                         "memberName": "timestamp",
                         "nodeType": "MemberAccess",
-                        "src": "2647:15:1",
+                        "src": "2569:15:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -2053,7 +2053,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 165,
-                          "src": "2677:14:1",
+                          "src": "2598:14:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
@@ -2067,13 +2067,13 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 159,
-                          "src": "2694:7:1",
+                          "src": "2615:7:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint128",
                             "typeString": "uint128"
                           }
                         },
-                        "src": "2677:24:1",
+                        "src": "2598:24:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint128",
                           "typeString": "uint128"
@@ -2096,7 +2096,7 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 33,
-                      "src": "2617:15:1",
+                      "src": "2540:15:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_type$_t_struct$_majStackingPool_$33_storage_ptr_$",
                         "typeString": "type(struct StackingPool.majStackingPool storage pointer)"
@@ -2110,7 +2110,7 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "2617:95:1",
+                    "src": "2540:92:1",
                     "tryCall": false,
                     "typeDescriptions": {
                       "typeIdentifier": "t_struct$_majStackingPool_$33_memory_ptr",
@@ -2118,7 +2118,7 @@
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "2588:124:1"
+                  "src": "2511:121:1"
                 },
                 {
                   "expression": {
@@ -2129,7 +2129,7 @@
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
                         "referencedDeclaration": 180,
-                        "src": "2749:3:1",
+                        "src": "2668:3:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_struct$_majStackingPool_$33_memory_ptr",
                           "typeString": "struct StackingPool.majStackingPool memory"
@@ -2150,7 +2150,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 39,
-                          "src": "2723:12:1",
+                          "src": "2642:12:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_$",
                             "typeString": "mapping(address => struct StackingPool.majStackingPool storage ref[] storage ref)"
@@ -2163,7 +2163,7 @@
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
                           "referencedDeclaration": 161,
-                          "src": "2736:6:1",
+                          "src": "2655:6:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -2174,7 +2174,7 @@
                         "isPure": false,
                         "lValueRequested": false,
                         "nodeType": "IndexAccess",
-                        "src": "2723:20:1",
+                        "src": "2642:20:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage",
                           "typeString": "struct StackingPool.majStackingPool storage ref[] storage ref"
@@ -2187,7 +2187,7 @@
                       "lValueRequested": false,
                       "memberName": "push",
                       "nodeType": "MemberAccess",
-                      "src": "2723:25:1",
+                      "src": "2642:25:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_arraypush_nonpayable$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_ptr_$_t_struct$_majStackingPool_$33_storage_$returns$__$bound_to$_t_array$_t_struct$_majStackingPool_$33_storage_$dyn_storage_ptr_$",
                         "typeString": "function (struct StackingPool.majStackingPool storage ref[] storage pointer,struct StackingPool.majStackingPool storage ref)"
@@ -2201,7 +2201,7 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "2723:30:1",
+                    "src": "2642:30:1",
                     "tryCall": false,
                     "typeDescriptions": {
                       "typeIdentifier": "t_tuple$__$",
@@ -2210,14 +2210,14 @@
                   },
                   "id": 195,
                   "nodeType": "ExpressionStatement",
-                  "src": "2723:30:1"
+                  "src": "2642:30:1"
                 }
               ]
             },
             "documentation": {
               "id": 157,
               "nodeType": "StructuredDocumentation",
-              "src": "2170:203:1",
+              "src": "2103:198:1",
               "text": " @notice Update majStackingPool when there is a withdraw\n @dev called in function withdrawF\n @param _amount is the amount to stake\n @param _token is token address"
             },
             "id": 197,
@@ -2225,7 +2225,7 @@
             "kind": "function",
             "modifiers": [],
             "name": "downStackingPool",
-            "nameLocation": "2388:16:1",
+            "nameLocation": "2315:16:1",
             "nodeType": "FunctionDefinition",
             "parameters": {
               "id": 162,
@@ -2236,10 +2236,10 @@
                   "id": 159,
                   "mutability": "mutable",
                   "name": "_amount",
-                  "nameLocation": "2413:7:1",
+                  "nameLocation": "2340:7:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 197,
-                  "src": "2405:15:1",
+                  "src": "2332:15:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -2250,7 +2250,7 @@
                     "id": 158,
                     "name": "uint128",
                     "nodeType": "ElementaryTypeName",
-                    "src": "2405:7:1",
+                    "src": "2332:7:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint128",
                       "typeString": "uint128"
@@ -2263,10 +2263,10 @@
                   "id": 161,
                   "mutability": "mutable",
                   "name": "_token",
-                  "nameLocation": "2430:6:1",
+                  "nameLocation": "2357:6:1",
                   "nodeType": "VariableDeclaration",
                   "scope": 197,
-                  "src": "2422:14:1",
+                  "src": "2349:14:1",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -2277,7 +2277,7 @@
                     "id": 160,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "2422:7:1",
+                    "src": "2349:7:1",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -2287,35 +2287,35 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "2404:33:1"
+              "src": "2331:33:1"
             },
             "returnParameters": {
               "id": 163,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "2447:0:1"
+              "src": "2374:0:1"
             },
             "scope": 198,
-            "src": "2379:382:1",
+            "src": "2306:373:1",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "internal"
           }
         ],
         "scope": 199,
-        "src": "60:2704:1",
+        "src": "57:2624:1",
         "usedErrors": []
       }
     ],
-    "src": "33:2733:1"
+    "src": "32:2650:1"
   },
   "compiler": {
     "name": "solc",
     "version": "0.8.14+commit.80d49f37.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.4.7",
-  "updatedAt": "2022-08-06T13:38:05.787Z",
+  "schemaVersion": "3.4.8",
+  "updatedAt": "2022-08-07T19:48:01.688Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
