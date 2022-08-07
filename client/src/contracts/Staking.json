@@ -20821,12 +20821,12 @@
         }
       },
       "links": {},
-      "address": "0x01CC6193db4823DeB8334FD5cd26A8F9Ac5e52b9",
-      "transactionHash": "0x1b840fb9f421aa4960970a168767a676428c3af2cf9486aca66cb8505217067a"
+      "address": "0x623C201D8D38728492A8C07B9584A27B28F5C553",
+      "transactionHash": "0x5b290ae89b9d6e516904eb2932d4fd237b5e7adf165d9156d6cd857136e6d092"
     }
   },
   "schemaVersion": "3.4.8",
-  "updatedAt": "2022-08-07T19:48:43.594Z",
+  "updatedAt": "2022-08-07T20:48:32.083Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Anthony - Etienne - Jean-Baptiste",
