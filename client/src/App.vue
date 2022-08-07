@@ -99,7 +99,7 @@
 									<div class="invalid-feedback">{{ pools[key].amountUnstakeError }}</div>
 								</div>
 								<div class="text-end col-5">
-									<button class="btn btn-warning" @click="unstake(pools[key].token, key)">
+									<button class="btn btn-warning w-100" @click="unstake(pools[key].token, key)">
 										Unstake
 										<span v-show="loaderUnstake[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
 									</button>
