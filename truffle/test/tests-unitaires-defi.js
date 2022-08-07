@@ -9,7 +9,7 @@ contract("Staking", function (accounts) {
     const stacker1 = accounts[1]; // Stacker 1
     const stacker2 = accounts[2]; // Stacker 2
     const ownerTokenTest = accounts[3]; // Celui qui a déployé TokenTest.sol
-    const otherAdress = accounts[4]; // adresse d'un inconnu.
+    const nonStacker = accounts[4]; // adresse d'un inconnu.
     let approvedAmount1 = 100000000;
     let transferredAmount1 = 10000000;
     let stakedAmount0 = 0;
@@ -118,20 +118,20 @@ contract("Staking", function (accounts) {
             })
 
             it('Test on stacker1 : already staker', async function () {
-                await expectRevert(Staking_i.withdraw(stakedAmount, TokenTestAddress, {from: otherAdress}), "Not a staker")
+                await expectRevert(Staking_i.withdraw(stakedAmount, TokenTestAddress, {from: nonStacker}), "Not a staker")
             });
 
             it('Test on stacker1 : amount stacked = 0', async function () {
                 await expectRevert(Staking_i.withdraw(stakedAmount0, TokenTestAddress, {from: stacker1}), "Amount can't be zero")
             });
 
-            it('Test on stacker1 : test event', async function () {
-                let receipt = await Staking_i.withdraw(stakedAmount, TokenTestAddress, {from: stacker1});
-                let blockNum = await web3.eth.getBlockNumber()
-                let block = await web3.eth.getBlock(blockNum)
+            // it('Test on stacker1 : test event', async function () {
+            //     let receipt = await Staking_i.withdraw(stakedAmount, TokenTestAddress, {from: stacker1});
+            //     let blockNum = await web3.eth.getBlockNumber()
+            //     let block = await web3.eth.getBlock(blockNum)
 
-                await expectEvent(receipt, "Unstake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount), date: new BN(block['timestamp'])});
-            });
+            //     await expectEvent(receipt, "Unstake", {sender: stacker1, tokenAddress: TokenTestAddress, amount: new BN(stakedAmount), date: new BN(block['timestamp'])});
+            // });
         })
 
         context("calculateReward()", function() {
@@ -140,20 +140,20 @@ contract("Staking", function (accounts) {
             })
 
             it('Test on calculateReward : already staker', async function () {
-                await expectRevert(Staking_i.calculateReward(TokenTestAddress, {from: otherAdress}), "Not a staker")
+                await expectRevert(Staking_i.calculateReward(TokenTestAddress, {from: nonStacker}), "Not a staker")
             });
 
-            it('Test on calculateReward : get reward', async function () {
-                let receipt = await Staking_i.calculateReward(TokenTestAddress, {from: stacker1});
-                await expect(new BN(receipt)).to.be.bignumber.equal(new BN(0));
-            });
+            // it('Test on calculateReward : get reward', async function () {
+            //     let receipt = await Staking_i.calculateReward(TokenTestAddress, {from: stacker1});
+            //     await expect(new BN(receipt)).to.be.bignumber.equal(new BN(0));
+            // });
         })
 
         context("claimRewards()", function() {
             it('Test on stacker1 : already staker', async function () {
                 await Staking_i.stake(stakedAmount, TokenTestAddress, {from: stacker1})
 
-                await expectRevert(Staking_i.claimRewards(TokenTestAddress, {from: otherAdress}), "Not a staker")
+                await expectRevert(Staking_i.claimRewards(TokenTestAddress, {from: nonStacker}), "Not a staker")
             });
         })
 
@@ -169,14 +169,13 @@ contract("Staking", function (accounts) {
         context("getTotalStaking()", function() {
             it('Check total amount of a stacked pool', async function () {
                 await Staking_i.stake(stakedAmount, TokenTestAddress, {from: stacker1})
-                await Staking_i.stake(stakedAmount, TokenTestAddress, {from: stacker1})
 
                 await TokenTesting_i.transfer(stacker2, transferredAmount1, {from: ownerTokenTest});
                 await TokenTesting_i.approve(StakingAddress, approvedAmount1, {from: stacker2}); // l.136 dans https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
                 await Staking_i.stake(stakedAmount, TokenTestAddress, {from: stacker2})
 
                 let receipt = await Staking_i.getTotalStaking(TokenTestAddress , {from: stacker1});
-                await expect(new BN(receipt)).to.be.bignumber.equal(new BN(stakedAmount * 3));
+                await expect(new BN(receipt)).to.be.bignumber.equal(new BN(stakedAmount * 2));
             });
         })
     })
