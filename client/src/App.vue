@@ -77,7 +77,7 @@
 							</div>
 							<button class="btn-primary btn" @click="approveStakingContract(pool.token, key)" v-if="!pools[key].approve && pools[key].totalAccountStake == 0">
 								Approve the contract
-								<span v-show="loaderStake" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+								<span v-show="loaderApproval" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
 							</button>
 
 							<div class="form-group mb-3 row" v-if="pools[key].approve">
