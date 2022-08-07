@@ -94,11 +94,11 @@
 							</div>
 
 							<div class="row form-group" v-if="pools[key].approve && pools[key].totalAccountStake > 0">
-								<div class="col-9">
+								<div class="col-7">
 									<input type="text" class="form-control" :class="(pools[key].amountUnstakeError) ? 'is-invalid' : ''" autocomplete="off" placeholder="Amount" v-model="pools[key].amountUnstake">
 									<div class="invalid-feedback">{{ pools[key].amountUnstakeError }}</div>
 								</div>
-								<div class="text-end col-3">
+								<div class="text-end col-5">
 									<button class="btn btn-warning" @click="unstake(pools[key].token, key)">
 										Unstake
 										<span v-show="loaderUnstake[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
