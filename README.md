@@ -32,4 +32,4 @@ https://www.youtube.com/watch?v=UcAmdV8eeKo
 https://tp-defi.vercel.app/
 
 ## Unit tests
-Please refer to the README file in the "/test" folder.
+Please refer to the README file in the "/truffle/test" folder.
