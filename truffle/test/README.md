@@ -10,7 +10,7 @@
 
 https://www.brainy-club.fr/Alyra-cpmd4dqwpfgh5wskz/
 
-## Introduction
+## Explanation
 
 The unit tests concern the CrowdV.sol, StackingPool.sol, Staking.sol and TokenTest.sol files.
 
@@ -49,10 +49,6 @@ You will find below the screenshots of the different tests performed.
 ## Files
 
 coverage.zip avec optimizer: { enabled: true, runs: 1 }.
-
-## Demo video Dapp
-
-https://www.youtube.com/watch?v=UcAmdV8eeKo
 
 ## Images
 
