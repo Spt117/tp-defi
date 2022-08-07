@@ -16,6 +16,8 @@ The unit tests concern the CrowdV.sol, StackingPool.sol, Staking.sol and TokenTe
 
 The tests were performed with "eth-gas-reporter" and "coverage" previously installed and configured in truffle-config.js.
 
+Tests were performed with "Ganache" (Chainlink disabled) because the tests with KOVAN are too long and expensive.
+
 ```
 $ truffle test
 ```
