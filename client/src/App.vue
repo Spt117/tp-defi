@@ -298,7 +298,7 @@
 				await token.methods.approve(this.addressContract, 10000000000000).send({ from: this.accounts[0] })
 				this.pools[key].approve = true
 				this.loaderApproval = false
-				localStorage.setItem('approval' + key, true)
+				localStorage.setItem('approval' + key + this.accounts[0], true)
 			},
 
 			/**
@@ -314,11 +314,10 @@
 				// 	}
 				// }
 
-				if (localStorage.getItem('approval'+key) != undefined) {
+				if (localStorage.getItem('approval'+ key + this.accounts[0]) != undefined) {
 					this.pools[key].approve = true
 				}
 
-				localStorage.setItem('approval' + key, true)
 			},
 
 			/**
