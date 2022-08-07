@@ -81,11 +81,11 @@
 							</button>
 
 							<div class="form-group mb-3 row" v-if="pools[key].approve">
-								<div class="col-9">
+								<div class="col-7">
 									<input type="text" class="form-control" :class="(pools[key].amountStakeError) ? 'is-invalid' : ''" placeholder="Amount" autocomplete="off" v-model="pools[key].amountStake">
 									<div class="invalid-feedback">{{ pools[key].amountStakeError }}</div>
 								</div>
-								<div class="col-3 text-end">
+								<div class="col-5 text-end">
 									<button class="btn-success btn w-100" @click="stake(pools[key].token, key)">
 										Stake
 										<span v-show="loaderStake[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>	
