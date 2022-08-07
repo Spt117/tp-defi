@@ -86,7 +86,10 @@
 									<div class="invalid-feedback">{{ pools[key].amountStakeError }}</div>
 								</div>
 								<div class="col-3 text-end">
-									<button class="btn-success btn w-100" @click="stake(pools[key].token, key)">Stake</button>
+									<button class="btn-success btn w-100" @click="stake(pools[key].token, key)">
+										Stake
+										<span v-show="loaderStake[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>	
+									</button>
 								</div>
 							</div>
 
@@ -96,12 +99,18 @@
 									<div class="invalid-feedback">{{ pools[key].amountUnstakeError }}</div>
 								</div>
 								<div class="text-end col-3">
-									<button class="btn btn-warning" @click="unstake(pools[key].token, key)">Unstake</button>
+									<button class="btn btn-warning" @click="unstake(pools[key].token, key)">
+										Unstake
+										<span v-show="loaderUnstake[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+									</button>
 								</div>
 							</div>
 
 							<div class="mt-3 text-center" v-if="pools[key].totalAccountStake > 0">
-								<button class="btn btn-primary" @click="claimRewards(pools[key].token)">Claim rewards</button>
+								<button class="btn btn-primary" @click="claimRewards(pools[key].token, key)">
+									Claim rewards
+									<span v-show="loaderClaim[key]" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+								</button>
 								<p v-if="pools[key].rewards" class="mt-2">Your rewards : {{ pools[key].rewards }}</p>
 							</div>
 
@@ -126,9 +135,12 @@
 				instance: false,
 				connectedWallet: false,
 				connectedWalletTruncate: false,
+				loaderStake: [],
+				loaderClaim: [],
 				addressContract: false,
 				owner: false,
 				currentOwner: false,
+				loaderUnstake: [],
 				pools: [],
 				displayAddPoolForm: false,
 				loaderAddPool: false,
@@ -343,7 +355,7 @@
 					/*if (this.pools[key].totalAccountStake > 0) {
 						fnName = 'addStake'
 					}*/
-
+					this.loaderStake[key] = true
 					try {
 						await this.instance.methods[fnName](this.pools[key].amountStake, addressToken).send({ from: this.accounts[0] })
 						this.pools[key].amountStake = null
@@ -354,6 +366,7 @@
 							console.log(this.parseRevertMsg(revert))				
 						})
 					}
+					this.loaderStake[key] = false
 	
 					this.pools[key].totalStakes = await this.getStakingTotal(this.pools[key].token)
 					this.pools[key].totalAccountStake = await this.getStakingByPoolByAccount(this.pools[key].token)
@@ -371,6 +384,7 @@
 					this.pools[key].amountUnstakeError = 'Please enter a number.';
 				} else {
 					this.pools[key].amountUnstakeError = false
+					this.loaderUnstake[key] = true
 					try {
 						await this.instance.methods.withdraw(this.pools[key].amountUnstake, addressToken).send({ from: this.accounts[0] })
 						this.pools[key].amountUnstake = null
@@ -382,6 +396,7 @@
 							console.log(this.parseRevertMsg(revert))				
 						})
 					}
+					this.loaderUnstake[key] = false
 				}
 
 				this.pools[key].totalStakes = await this.getStakingTotal(this.pools[key].token)
@@ -401,7 +416,8 @@
 			/**
 			 * Claim
 			 */
-			async claimRewards (addressToken) {
+			async claimRewards (addressToken, key) {
+				this.loaderClaim[key] = true
 				try {
 					await this.instance.methods.claimRewards(addressToken,).send({ from: this.accounts[0] })
 				} catch (error) {
@@ -411,6 +427,7 @@
 						console.log(this.parseRevertMsg(revert))				
 					})
 				}
+				this.loaderClaim[key] = false
 			}
 		},
 		async mounted () {
